@@ -3,6 +3,8 @@ import { AddExpenseFab } from '@/components/expenses/AddExpenseFab'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { DesktopHeader } from '@/components/layout/DesktopHeader'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({
   children,
 }: {

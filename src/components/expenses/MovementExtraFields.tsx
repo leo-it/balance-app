@@ -1,13 +1,24 @@
 'use client'
 
 import { useState } from 'react'
+import type { MovementCurrency, MovementType, SavingsTarget } from '@/types/movement'
 
 const labelClass = 'mb-1.5 block text-xs font-medium text-zinc-400'
 const inputClass =
   'w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-emerald-500/50 focus:outline-none focus:ring-1 focus:ring-emerald-500/30'
 
-export function MovementExtraFields() {
-  const [type, setType] = useState<'expense' | 'income'>('expense')
+interface MovementExtraFieldsProps {
+  defaultType?: MovementType
+  defaultCurrency?: MovementCurrency
+  defaultSavingsTarget?: SavingsTarget
+}
+
+export function MovementExtraFields({
+  defaultType = 'expense',
+  defaultCurrency = 'ARS',
+  defaultSavingsTarget = 'none',
+}: MovementExtraFieldsProps) {
+  const [type, setType] = useState<MovementType>(defaultType)
 
   return (
     <>
@@ -44,7 +55,12 @@ export function MovementExtraFields() {
           <label htmlFor="savingsTarget" className={labelClass}>
             ¿Aportar a ahorro?
           </label>
-          <select id="savingsTarget" name="savingsTarget" defaultValue="none" className={inputClass}>
+          <select
+            id="savingsTarget"
+            name="savingsTarget"
+            defaultValue={defaultSavingsTarget}
+            className={inputClass}
+          >
             <option value="none">No, suma al presupuesto del mes</option>
             <option value="ars">Sí, jar ARS</option>
             <option value="usd">Sí, jar USD</option>
@@ -56,7 +72,7 @@ export function MovementExtraFields() {
         <label htmlFor="currency" className={labelClass}>
           Moneda
         </label>
-        <select id="currency" name="currency" defaultValue="ARS" className={inputClass}>
+        <select id="currency" name="currency" defaultValue={defaultCurrency} className={inputClass}>
           <option value="ARS">Pesos (ARS)</option>
           <option value="USD">Dólares (USD)</option>
         </select>

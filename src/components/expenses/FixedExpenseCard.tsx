@@ -4,7 +4,7 @@ import { useTransition } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Home, Wifi, Shield, Dumbbell, Music, Tv, Car, Zap,
-  Receipt, CheckCircle2, Undo2, Loader2,
+  Receipt, CheckCircle2, Undo2, Loader2, Pencil, Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/formatters'
@@ -18,9 +18,11 @@ interface FixedExpenseCardProps {
   expense: FixedExpense
   onPay: (id: string) => void
   onUndo: (id: string) => void
+  onEdit: (expense: FixedExpense) => void
+  onDelete: (id: string) => void
 }
 
-export function FixedExpenseCard({ expense, onPay, onUndo }: FixedExpenseCardProps) {
+export function FixedExpenseCard({ expense, onPay, onUndo, onEdit, onDelete }: FixedExpenseCardProps) {
   const [isPending, startTransition] = useTransition()
   const Icon = ICONS[expense.iconName] ?? Receipt
   const isPaid = expense.status === 'paid'
@@ -71,7 +73,29 @@ export function FixedExpenseCard({ expense, onPay, onUndo }: FixedExpenseCardPro
         <span className="text-xs text-zinc-500">{formatCurrency(expense.amount)}</span>
       </div>
 
-      <AnimatePresence mode="wait" initial={false}>
+      <div className="flex shrink-0 items-center gap-0.5">
+        {!isPending && (
+          <>
+            <button
+              type="button"
+              onClick={() => onEdit(expense)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300 active:scale-95"
+              aria-label="Editar gasto"
+            >
+              <Pencil size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onDelete(expense.id)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400 active:scale-95"
+              aria-label="Borrar gasto"
+            >
+              <Trash2 size={13} />
+            </button>
+          </>
+        )}
+
+        <AnimatePresence mode="wait" initial={false}>
         {isPending ? (
           <motion.div
             key="loading"
@@ -109,6 +133,7 @@ export function FixedExpenseCard({ expense, onPay, onUndo }: FixedExpenseCardPro
           </motion.button>
         )}
       </AnimatePresence>
+      </div>
     </motion.div>
   )
 }

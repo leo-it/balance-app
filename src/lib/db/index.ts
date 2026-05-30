@@ -19,6 +19,7 @@ export {
   syncBudgetSnapshot,
   updateBudgetConfig,
   applySavingsFromMovement,
+  reverseSavingsFromMovement,
 } from './queries'
 export type {
   CategorySpend,

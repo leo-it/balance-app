@@ -116,3 +116,87 @@ export async function undoPaid(expenseId: string): Promise<void> {
   revalidatePath('/analytics')
   revalidatePath('/resumen')
 }
+
+export async function deleteFixedExpense(expenseId: string): Promise<void> {
+  assertDatabase()
+  const userId = await getUserId()
+  const db = createDbClient()
+
+  const { data, error: fetchError } = await db
+    .from('fixed_expenses')
+    .select('status')
+    .eq('id', expenseId)
+    .eq('user_id', userId)
+    .single()
+
+  if (fetchError) throw new Error(fetchError.message)
+
+  const { error } = await db
+    .from('fixed_expenses')
+    .delete()
+    .eq('id', expenseId)
+    .eq('user_id', userId)
+
+  if (error) throw new Error(error.message)
+
+  await Promise.all([
+    sendToN8n({ userId, action: 'delete_fixed_expense', payload: { expenseId } }),
+    data?.status === 'paid' ? syncBudgetSnapshot(userId) : Promise.resolve(),
+  ])
+
+  revalidatePath('/')
+  revalidatePath('/analytics')
+  revalidatePath('/resumen')
+}
+
+export async function updateFixedExpense(
+  _prev: FormActionState,
+  formData: FormData,
+): Promise<FormActionState> {
+  try {
+    assertDatabase()
+    const userId = await getUserId()
+    const expenseId = String(formData.get('expenseId') ?? '').trim()
+    const label = String(formData.get('label') ?? '').trim()
+    const amount = parseAmount(formData.get('amount'))
+    const iconName = String(formData.get('iconName') ?? 'Receipt').trim() || 'Receipt'
+
+    if (!expenseId) return { error: 'Gasto no válido' }
+    if (!label) return { error: 'Ingresá un nombre para el gasto' }
+    if (amount === null) return { error: 'Ingresá un monto válido mayor a 0' }
+
+    const db = createDbClient()
+    const { data: existing, error: fetchError } = await db
+      .from('fixed_expenses')
+      .select('status')
+      .eq('id', expenseId)
+      .eq('user_id', userId)
+      .single()
+
+    if (fetchError) return { error: fetchError.message }
+
+    const { error } = await db
+      .from('fixed_expenses')
+      .update({ label, amount, icon_name: iconName })
+      .eq('id', expenseId)
+      .eq('user_id', userId)
+
+    if (error) return { error: error.message }
+
+    await Promise.all([
+      sendToN8n({
+        userId,
+        action: 'update_fixed_expense',
+        payload: { expenseId, label, amount, iconName },
+      }),
+      existing?.status === 'paid' ? syncBudgetSnapshot(userId) : Promise.resolve(),
+    ])
+
+    revalidatePath('/')
+    revalidatePath('/analytics')
+    revalidatePath('/resumen')
+    return { error: null, success: true }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'No se pudo actualizar el gasto' }
+  }
+}

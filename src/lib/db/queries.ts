@@ -375,3 +375,21 @@ export async function applySavingsFromMovement(
 
   await updateBudgetConfig(userId, patch)
 }
+
+export async function reverseSavingsFromMovement(
+  userId: string,
+  amount: number,
+  target: SavingsTarget,
+): Promise<void> {
+  if (target === 'none') return
+
+  const jars = await getSavingsJars(userId)
+  if (!jars) return
+
+  const patch =
+    target === 'ars'
+      ? { savingsArsCurrent: Math.max(0, jars.arsCurrent - amount) }
+      : { savingsUsdCurrent: Math.max(0, jars.usdCurrent - amount) }
+
+  await updateBudgetConfig(userId, patch)
+}

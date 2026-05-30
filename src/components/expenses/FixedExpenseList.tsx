@@ -1,7 +1,8 @@
 'use client'
 
-import { useOptimistic, useTransition } from 'react'
-import { markAsPaid, undoPaid } from '@/actions/expense.actions'
+import { useOptimistic, useState, useTransition } from 'react'
+import { deleteFixedExpense, markAsPaid, undoPaid } from '@/actions/expense.actions'
+import { EditFixedExpenseSheet } from './EditFixedExpenseSheet'
 import { formatCurrency } from '@/lib/formatters'
 import type { FixedExpense } from '@/types/expense'
 import { FixedExpenseCard } from './FixedExpenseCard'
@@ -12,28 +13,53 @@ interface FixedExpenseListProps {
 
 export function FixedExpenseList({ expenses }: FixedExpenseListProps) {
   const [, startTransition] = useTransition()
+  const [editing, setEditing] = useState<FixedExpense | null>(null)
 
   const [optimisticExpenses, applyOptimistic] = useOptimistic(
     expenses,
-    (state: FixedExpense[], update: { id: string; status: 'pending' | 'paid' }) =>
-      state.map((e) =>
+    (
+      state: FixedExpense[],
+      update:
+        | { type: 'status'; id: string; status: 'pending' | 'paid' }
+        | { type: 'delete'; id: string },
+    ) => {
+      if (update.type === 'delete') {
+        return state.filter((e) => e.id !== update.id)
+      }
+      return state.map((e) =>
         e.id === update.id
-          ? { ...e, status: update.status, paidAt: update.status === 'paid' ? new Date().toISOString() : undefined }
+          ? {
+              ...e,
+              status: update.status,
+              paidAt: update.status === 'paid' ? new Date().toISOString() : undefined,
+            }
           : e,
-      ),
+      )
+    },
   )
 
   function handlePay(id: string) {
     startTransition(async () => {
-      applyOptimistic({ id, status: 'paid' })
+      applyOptimistic({ type: 'status', id, status: 'paid' })
       await markAsPaid(id)
     })
   }
 
   function handleUndo(id: string) {
     startTransition(async () => {
-      applyOptimistic({ id, status: 'pending' })
+      applyOptimistic({ type: 'status', id, status: 'pending' })
       await undoPaid(id)
+    })
+  }
+
+  function handleDelete(id: string) {
+    const expense = optimisticExpenses.find((e) => e.id === id)
+    if (!expense) return
+    if (!window.confirm(`¿Borrar "${expense.label}"? Esta acción no se puede deshacer.`)) return
+
+    startTransition(async () => {
+      applyOptimistic({ type: 'delete', id })
+      await deleteFixedExpense(id)
     })
   }
 
@@ -79,6 +105,8 @@ export function FixedExpenseList({ expenses }: FixedExpenseListProps) {
             expense={expense}
             onPay={handlePay}
             onUndo={handleUndo}
+            onEdit={setEditing}
+            onDelete={handleDelete}
           />
         ))}
       </div>
@@ -92,9 +120,15 @@ export function FixedExpenseList({ expenses }: FixedExpenseListProps) {
               expense={expense}
               onPay={handlePay}
               onUndo={handleUndo}
+              onEdit={setEditing}
+              onDelete={handleDelete}
             />
           ))}
         </div>
+      )}
+
+      {editing && (
+        <EditFixedExpenseSheet expense={editing} onClose={() => setEditing(null)} />
       )}
     </section>
   )

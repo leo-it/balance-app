@@ -1,6 +1,5 @@
-import { formatTime } from '@/lib/formatters'
 import type { Movement } from '@/types/movement'
-import { MovementItem } from './MovementItem'
+import { MovementList } from './MovementList'
 
 interface MovementFeedProps {
   movements: Movement[]
@@ -26,15 +25,7 @@ export function MovementFeed({ movements }: MovementFeedProps) {
         Movimientos recientes
       </h2>
 
-      <div className="divide-y divide-zinc-800/60 rounded-2xl border border-zinc-800 bg-zinc-900 px-4">
-        {movements.map((movement) => (
-          <MovementItem
-            key={movement.id}
-            movement={movement}
-            formattedTime={formatTime(movement.createdAt)}
-          />
-        ))}
-      </div>
+      <MovementList movements={movements} />
     </section>
   )
 }

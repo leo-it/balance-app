@@ -2,29 +2,22 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  BarChart3,
-  Settings,
-  TrendingUp,
-  Wallet,
-} from 'lucide-react'
+import { Wallet } from 'lucide-react'
+import { NAV_ITEMS } from '@/lib/nav-items'
+import { SignOutControl } from './SignOutControl'
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS = [
-  { href: '/resumen', label: 'Resumen', icon: Wallet },
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/analytics', label: 'Análisis', icon: BarChart3 },
-  { href: '/savings', label: 'Ahorros', icon: TrendingUp },
-  { href: '/settings', label: 'Ajustes', icon: Settings },
-]
-
 interface SidebarProps {
-  userName?: string
+  userFirstName?: string
   userInitial?: string
+  isDevAuth: boolean
 }
 
-export function Sidebar({ userName = 'Usuario', userInitial = 'U' }: SidebarProps) {
+export function Sidebar({
+  userFirstName = 'Usuario',
+  userInitial = 'U',
+  isDevAuth,
+}: SidebarProps) {
   const pathname = usePathname()
 
   return (
@@ -46,7 +39,7 @@ export function Sidebar({ userName = 'Usuario', userInitial = 'U' }: SidebarProp
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
                 isActive
-                  ? 'bg-zinc-800 text-zinc-50 font-medium'
+                  ? 'bg-zinc-800 font-medium text-zinc-50'
                   : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200',
               )}
             >
@@ -57,13 +50,14 @@ export function Sidebar({ userName = 'Usuario', userInitial = 'U' }: SidebarProp
         })}
       </nav>
 
-      <div className="border-t border-zinc-800 p-3">
+      <div className="space-y-1 border-t border-zinc-800 p-3">
         <div className="flex items-center gap-3 rounded-lg px-3 py-2">
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-xs font-bold text-zinc-300 uppercase">
             {userInitial}
           </div>
-          <span className="truncate text-sm text-zinc-400">{userName}</span>
+          <span className="truncate text-sm text-zinc-400">{userFirstName}</span>
         </div>
+        <SignOutControl isDevAuth={isDevAuth} />
       </div>
     </aside>
   )

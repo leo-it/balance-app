@@ -33,8 +33,16 @@ export async function getCurrentUserInfo(): Promise<{ firstName: string; initial
 
   const { currentUser } = await import('@clerk/nextjs/server')
   const user = await currentUser()
+  const firstName = resolveFirstName(user?.firstName, user?.fullName)
   return {
-    firstName: user?.firstName ?? 'Usuario',
-    initial: user?.firstName?.[0]?.toUpperCase() ?? 'U',
+    firstName,
+    initial: firstName[0]?.toUpperCase() ?? 'U',
   }
+}
+
+function resolveFirstName(first: string | null | undefined, full: string | null | undefined): string {
+  const trimmed = first?.trim()
+  if (trimmed) return trimmed.split(/\s+/)[0] ?? trimmed
+  const fromFull = full?.trim().split(/\s+/)[0]
+  return fromFull || 'Usuario'
 }

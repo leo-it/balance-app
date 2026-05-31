@@ -77,6 +77,7 @@ Lista de mejoras para llevar la app a producción con calidad. Priorizá según 
 
 ## UX y producto
 
+- [ ] **Lista de compras** — pantalla o sección para ítems a comprar (nombre, cantidad opcional, checkbox “comprado”, orden manual o por categoría; sync en Supabase por `user_id`; acceso desde menú mobile/desktop)
 - [ ] Metas de ahorro en cripto (hoy solo saldo, sin goal/progreso)
 - [ ] Editar saldo cripto manual en Ajustes (como ARS/USD/EUR)
 - [ ] Confirmación al borrar con mejor copy (accesible, no solo `window.confirm`)

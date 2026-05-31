@@ -19,3 +19,13 @@ export async function signInAsDevUser(): Promise<void> {
 
   redirect('/')
 }
+
+export async function signOutDevUser(): Promise<void> {
+  if (!isDevAuthAllowed()) {
+    throw new Error('Forbidden')
+  }
+
+  const cookieStore = await cookies()
+  cookieStore.delete(DEV_SESSION_COOKIE)
+  redirect('/login')
+}

@@ -77,7 +77,7 @@ Lista de mejoras para llevar la app a producción con calidad. Priorizá según 
 
 ## UX y producto
 
-- [ ] **Lista de compras** — pantalla o sección para ítems a comprar (nombre, cantidad opcional, checkbox “comprado”, orden manual o por categoría; sync en Supabase por `user_id`; acceso desde menú mobile/desktop)
+- [x] **Lista de compras** — `/compras`: ítems con nombre, cantidad opcional, categoría, marcar comprado, borrar y limpiar comprados; sync Supabase (`006_shopping_list.sql`); menú mobile/desktop ✓
 - [ ] Metas de ahorro en cripto (hoy solo saldo, sin goal/progreso)
 - [ ] Editar saldo cripto manual en Ajustes (como ARS/USD/EUR)
 - [ ] Confirmación al borrar con mejor copy (accesible, no solo `window.confirm`)
@@ -92,7 +92,7 @@ Lista de mejoras para llevar la app a producción con calidad. Priorizá según 
 - [ ] **Pre-commit:** script que corra `tsc`, tests y build antes de cada commit (ver sección Git abajo)
 - [ ] Tests E2E críticos (login, agregar movimiento, marcar gasto fijo pagado)
 - [ ] CI: `tsc`, Vitest, build en cada PR (GitHub Actions)
-- [ ] Migraciones SQL versionadas y documentadas (003–005 ✓)
+- [ ] Migraciones SQL versionadas y documentadas (003–006 ✓)
 - [ ] `.env.local.example` siempre al día (incl. `WIDGET_API_KEY`)
 - [ ] Monitoreo de errores (Sentry o similar) en producción
 - [ ] Logs estructurados en server actions (sin `console.log` en prod)

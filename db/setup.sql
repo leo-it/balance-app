@@ -53,6 +53,19 @@ CREATE TABLE IF NOT EXISTS movements (
 CREATE INDEX IF NOT EXISTS movements_user_id_idx ON movements(user_id);
 CREATE INDEX IF NOT EXISTS movements_created_at_idx ON movements(created_at DESC);
 
+CREATE TABLE IF NOT EXISTS shopping_list_items (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     text NOT NULL,
+  name        text NOT NULL,
+  quantity    text,
+  category    text NOT NULL DEFAULT 'General',
+  purchased   boolean NOT NULL DEFAULT false,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS shopping_list_items_user_id_idx ON shopping_list_items(user_id);
+
 -- ─── Triggers updated_at ──────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -73,11 +86,17 @@ CREATE TRIGGER fixed_expenses_updated_at
   BEFORE UPDATE ON fixed_expenses
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS shopping_list_items_updated_at ON shopping_list_items;
+CREATE TRIGGER shopping_list_items_updated_at
+  BEFORE UPDATE ON shopping_list_items
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 -- ─── RLS (acceso solo desde servidor con service_role) ────────────────────
 
 ALTER TABLE budget_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fixed_expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shopping_list_items ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users own their budget" ON budget_state;
 DROP POLICY IF EXISTS "Users own their expenses" ON fixed_expenses;
@@ -85,6 +104,7 @@ DROP POLICY IF EXISTS "Users own their movements" ON movements;
 DROP POLICY IF EXISTS "block_anon_budget" ON budget_state;
 DROP POLICY IF EXISTS "block_anon_expenses" ON fixed_expenses;
 DROP POLICY IF EXISTS "block_anon_movements" ON movements;
+DROP POLICY IF EXISTS "block_anon_shopping_list" ON shopping_list_items;
 
 CREATE POLICY "block_anon_budget" ON budget_state
   FOR ALL TO anon, authenticated USING (false);
@@ -93,4 +113,7 @@ CREATE POLICY "block_anon_expenses" ON fixed_expenses
   FOR ALL TO anon, authenticated USING (false);
 
 CREATE POLICY "block_anon_movements" ON movements
+  FOR ALL TO anon, authenticated USING (false);
+
+CREATE POLICY "block_anon_shopping_list" ON shopping_list_items
   FOR ALL TO anon, authenticated USING (false);

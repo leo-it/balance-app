@@ -98,6 +98,34 @@ export function BudgetSettingsForm({ budget }: BudgetSettingsFormProps) {
             className={inputClass}
           />
         </div>
+        <div>
+          <label htmlFor="savingsEurGoal" className="text-sm font-medium text-zinc-200">
+            Meta ahorro EUR
+          </label>
+          <input
+            id="savingsEurGoal"
+            name="savingsEurGoal"
+            type="number"
+            min="0"
+            step="0.01"
+            defaultValue={budget.savings.eurGoal || ''}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="savingsEurCurrent" className="text-sm font-medium text-zinc-200">
+            Saldo actual EUR
+          </label>
+          <input
+            id="savingsEurCurrent"
+            name="savingsEurCurrent"
+            type="number"
+            min="0"
+            step="0.01"
+            defaultValue={budget.savings.eurCurrent || ''}
+            className={inputClass}
+          />
+        </div>
       </div>
 
       <button

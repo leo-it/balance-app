@@ -14,6 +14,9 @@ CREATE TABLE IF NOT EXISTS budget_state (
   savings_ars_current numeric(12,2) NOT NULL DEFAULT 0,
   savings_usd_goal    numeric(12,2) NOT NULL DEFAULT 0,
   savings_usd_current numeric(12,2) NOT NULL DEFAULT 0,
+  savings_eur_goal    numeric(12,2) NOT NULL DEFAULT 0,
+  savings_eur_current numeric(12,2) NOT NULL DEFAULT 0,
+  savings_crypto      jsonb NOT NULL DEFAULT '{}'::jsonb,
   deviation_status text NOT NULL DEFAULT 'ok' CHECK (deviation_status IN ('ok','warning','alert')),
   created_at       timestamptz NOT NULL DEFAULT now(),
   updated_at       timestamptz NOT NULL DEFAULT now()
@@ -37,12 +40,13 @@ CREATE TABLE IF NOT EXISTS movements (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     text NOT NULL,
   description text NOT NULL,
-  amount      numeric(12,2) NOT NULL,
+  amount      numeric(18,8) NOT NULL,
   type        text NOT NULL CHECK (type IN ('income','expense')),
   category    text NOT NULL DEFAULT 'General',
   icon_name   text NOT NULL DEFAULT 'Receipt',
-  currency    text NOT NULL DEFAULT 'ARS' CHECK (currency IN ('ARS', 'USD')),
-  savings_target text NOT NULL DEFAULT 'none' CHECK (savings_target IN ('none', 'ars', 'usd')),
+  currency    text NOT NULL DEFAULT 'ARS' CHECK (currency IN ('ARS', 'USD', 'EUR', 'CRYPTO')),
+  crypto_symbol text,
+  savings_target text NOT NULL DEFAULT 'none' CHECK (savings_target IN ('none', 'ars', 'usd', 'eur', 'crypto')),
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 

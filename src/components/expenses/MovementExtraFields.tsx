@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { MovementCurrency, MovementType, SavingsTarget } from '@/types/movement'
+import { CURRENCY_OPTIONS, SAVINGS_TARGET_OPTIONS } from '@/lib/savings-labels'
 
 const labelClass = 'mb-1.5 block text-xs font-medium text-zinc-400'
 const inputClass =
@@ -11,14 +12,51 @@ interface MovementExtraFieldsProps {
   defaultType?: MovementType
   defaultCurrency?: MovementCurrency
   defaultSavingsTarget?: SavingsTarget
+  defaultCryptoSymbol?: string
+  currency?: MovementCurrency
+  onCurrencyChange?: (currency: MovementCurrency) => void
+  savingsTarget?: SavingsTarget
+  onSavingsTargetChange?: (target: SavingsTarget) => void
 }
 
 export function MovementExtraFields({
   defaultType = 'expense',
   defaultCurrency = 'ARS',
   defaultSavingsTarget = 'none',
+  defaultCryptoSymbol = '',
+  currency: controlledCurrency,
+  onCurrencyChange,
+  savingsTarget: controlledSavingsTarget,
+  onSavingsTargetChange,
 }: MovementExtraFieldsProps) {
   const [type, setType] = useState<MovementType>(defaultType)
+  const [internalCurrency, setInternalCurrency] = useState<MovementCurrency>(defaultCurrency)
+  const [internalSavingsTarget, setInternalSavingsTarget] = useState<SavingsTarget>(defaultSavingsTarget)
+
+  const currency = controlledCurrency ?? internalCurrency
+  const savingsTarget = controlledSavingsTarget ?? internalSavingsTarget
+
+  function handleSavingsTargetChange(next: SavingsTarget) {
+    if (onSavingsTargetChange) {
+      onSavingsTargetChange(next)
+    } else {
+      setInternalSavingsTarget(next)
+    }
+    if (next === 'crypto') {
+      handleCurrencyChange('CRYPTO')
+    }
+  }
+
+  function handleCurrencyChange(next: MovementCurrency) {
+    if (onCurrencyChange) {
+      onCurrencyChange(next)
+    } else {
+      setInternalCurrency(next)
+    }
+  }
+
+  const showCryptoSymbol =
+    currency === 'CRYPTO' || (type === 'income' && savingsTarget === 'crypto')
 
   return (
     <>
@@ -53,17 +91,20 @@ export function MovementExtraFields({
       {type === 'income' && (
         <div>
           <label htmlFor="savingsTarget" className={labelClass}>
-            ¿Aportar a ahorro?
+            ¿Aportar al ahorro?
           </label>
           <select
             id="savingsTarget"
             name="savingsTarget"
-            defaultValue={defaultSavingsTarget}
+            value={savingsTarget}
+            onChange={(e) => handleSavingsTargetChange(e.target.value as SavingsTarget)}
             className={inputClass}
           >
-            <option value="none">No, suma al presupuesto del mes</option>
-            <option value="ars">Sí, jar ARS</option>
-            <option value="usd">Sí, jar USD</option>
+            {SAVINGS_TARGET_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
       )}
@@ -72,11 +113,36 @@ export function MovementExtraFields({
         <label htmlFor="currency" className={labelClass}>
           Moneda
         </label>
-        <select id="currency" name="currency" defaultValue={defaultCurrency} className={inputClass}>
-          <option value="ARS">Pesos (ARS)</option>
-          <option value="USD">Dólares (USD)</option>
+        <select
+          id="currency"
+          name="currency"
+          value={currency}
+          onChange={(e) => handleCurrencyChange(e.target.value as MovementCurrency)}
+          className={inputClass}
+        >
+          {CURRENCY_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </div>
+
+      {showCryptoSymbol && (
+        <div>
+          <label htmlFor="cryptoSymbol" className={labelClass}>
+            Símbolo cripto
+          </label>
+          <input
+            id="cryptoSymbol"
+            name="cryptoSymbol"
+            defaultValue={defaultCryptoSymbol}
+            placeholder="Ej. BTC, ETH, USDT"
+            className={inputClass}
+            required
+          />
+        </div>
+      )}
     </>
   )
 }

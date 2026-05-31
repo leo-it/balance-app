@@ -125,6 +125,7 @@ export async function miAction(input: string): Promise<void> {
 - Nombres de funciones en camelCase, componentes en PascalCase, tipos en PascalCase.
 - Los archivos de tipos van en `src/types/`. Los tipos de utilidades (no de dominio) van inline o en el archivo donde se usan.
 - Exportaciones nombradas en todo el proyecto — sin `export default` salvo en `page.tsx` y `layout.tsx` (requerido por Next.js).
+- Documentación humana en `docs/BUENAS-PRACTICAS.md` y pendientes en `docs/TAREAS.md`.
 
 ---
 

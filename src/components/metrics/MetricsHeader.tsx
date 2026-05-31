@@ -18,12 +18,28 @@ export function MetricsHeader({ budget }: MetricsHeaderProps) {
 
       <MonthlyBreakdown budget={budget} />
 
-      <div className="border-t border-zinc-800 pt-3">
+      <div className="border-t border-zinc-800 pt-3 space-y-3">
         <SavingsProgressWidget
           label="Ahorro ARS"
           current={budget.savings.arsCurrent}
           goal={budget.savings.arsGoal}
         />
+        {(budget.savings.usdGoal > 0 || budget.savings.usdCurrent > 0) && (
+          <SavingsProgressWidget
+            label="Ahorro USD"
+            current={budget.savings.usdCurrent}
+            goal={budget.savings.usdGoal}
+            currency="USD"
+          />
+        )}
+        {(budget.savings.eurGoal > 0 || budget.savings.eurCurrent > 0) && (
+          <SavingsProgressWidget
+            label="Ahorro EUR"
+            current={budget.savings.eurCurrent}
+            goal={budget.savings.eurGoal}
+            currency="EUR"
+          />
+        )}
       </div>
     </section>
   )

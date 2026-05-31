@@ -3,8 +3,9 @@ import {
   ShoppingCart, Banknote, Fuel, Pill, ArrowDownLeft, ArrowUpRight,
   Coffee, Bus, Utensils, Receipt, Tv, Wifi, Home, Music,
 } from 'lucide-react'
+import { formatMovementAmount, formatTime } from '@/lib/formatters'
+import { currencyLabel, savingsTargetLabel } from '@/lib/savings-labels'
 import { cn } from '@/lib/utils'
-import { formatCurrency, formatTime } from '@/lib/formatters'
 import type { Movement } from '@/types/movement'
 
 const ICONS: Record<string, React.ElementType> = {
@@ -20,6 +21,12 @@ interface MovementItemProps {
 export function MovementItem({ movement, formattedTime }: MovementItemProps) {
   const Icon = ICONS[movement.iconName] ?? Receipt
   const isIncome = movement.type === 'income'
+  const currencyBadge = currencyLabel(movement.currency, movement.cryptoSymbol)
+
+  const isCrypto =
+    movement.currency === 'CRYPTO' ||
+    movement.savingsTarget === 'crypto' ||
+    Boolean(movement.cryptoSymbol)
 
   return (
     <div className="flex items-center gap-3 py-2.5">
@@ -47,14 +54,14 @@ export function MovementItem({ movement, formattedTime }: MovementItemProps) {
           >
             {isIncome ? 'Ingreso' : 'Gasto'}
           </Badge>
-          {movement.currency === 'USD' && (
+          {(movement.currency !== 'ARS' || isCrypto) && (
             <Badge variant="outline" className="border-zinc-600 px-1.5 py-0 text-[10px] text-zinc-400">
-              USD
+              {currencyBadge}
             </Badge>
           )}
           {movement.savingsTarget !== 'none' && (
             <Badge variant="outline" className="border-amber-500/30 px-1.5 py-0 text-[10px] text-amber-400">
-              Ahorro {movement.savingsTarget.toUpperCase()}
+              {savingsTargetLabel(movement.savingsTarget, movement.cryptoSymbol)}
             </Badge>
           )}
         </div>
@@ -72,7 +79,12 @@ export function MovementItem({ movement, formattedTime }: MovementItemProps) {
           )}
         >
           {isIncome ? '+' : '-'}
-          {formatCurrency(movement.amount, movement.currency)}
+          {formatMovementAmount(
+            movement.amount,
+            movement.currency,
+            movement.cryptoSymbol,
+            movement.savingsTarget,
+          )}
         </span>
         <span className="text-xs text-zinc-600">{formattedTime}</span>
       </div>

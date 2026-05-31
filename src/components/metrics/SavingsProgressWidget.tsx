@@ -9,7 +9,7 @@ interface SavingsProgressWidgetProps {
   label?: string
   current: number
   goal: number
-  currency?: 'ARS' | 'USD'
+  currency?: 'ARS' | 'USD' | 'EUR'
 }
 
 export function SavingsProgressWidget({

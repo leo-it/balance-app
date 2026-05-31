@@ -3,7 +3,7 @@ import { getUserId } from '@/lib/auth'
 import { getBudgetForUser } from '@/lib/data'
 import { getRecentMovements } from '@/lib/db'
 import { DatabaseSetupRequired } from '@/components/setup/DatabaseSetupRequired'
-import { formatCurrency, formatTime } from '@/lib/formatters'
+import { formatCurrency, formatMovementAmount } from '@/lib/formatters'
 import { Wallet, ChevronRight } from 'lucide-react'
 
 export default async function ResumenPage() {
@@ -35,7 +35,7 @@ export default async function ResumenPage() {
               {formatCurrency(budget.dailyBudget)}
             </p>
             <p className="mt-1 text-xs text-zinc-500">
-              Restante mes: {formatCurrency(budget.monthRemaining)}
+              Restante gastable: {formatCurrency(budget.spendableRemaining)}
             </p>
           </div>
 
@@ -52,6 +52,14 @@ export default async function ResumenPage() {
                 {formatCurrency(budget.savings.usdCurrent, 'USD')}
               </p>
             </div>
+            {(budget.savings.eurCurrent > 0 || budget.savings.eurGoal > 0) && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
+                <p className="text-[10px] uppercase text-zinc-500">Ahorro EUR</p>
+                <p className="mt-1 text-lg font-bold tabular-nums text-zinc-100">
+                  {formatCurrency(budget.savings.eurCurrent, 'EUR')}
+                </p>
+              </div>
+            )}
           </div>
 
           {movements.length > 0 && (
@@ -69,7 +77,7 @@ export default async function ResumenPage() {
                       }
                     >
                       {m.type === 'income' ? '+' : '-'}
-                      {formatCurrency(m.amount, m.currency)}
+                      {formatMovementAmount(m.amount, m.currency, m.cryptoSymbol, m.savingsTarget)}
                     </span>
                   </div>
                 ))}

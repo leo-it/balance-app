@@ -37,7 +37,7 @@ export function DailyBudgetWidget({ amount }: DailyBudgetWidgetProps) {
         {displayValue}
       </motion.span>
       <p className="text-[11px] leading-snug text-zinc-500">
-        Promedio diario según lo que te queda del mes
+        Promedio diario según lo gastable del mes (resta fijos pendientes)
       </p>
     </div>
   )

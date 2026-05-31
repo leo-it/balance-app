@@ -41,6 +41,7 @@ export function EditFixedExpenseSheet({ expense, onClose }: EditFixedExpenseShee
   return (
     <AnimatePresence>
       <motion.button
+        key="backdrop"
         type="button"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -51,6 +52,7 @@ export function EditFixedExpenseSheet({ expense, onClose }: EditFixedExpenseShee
       />
 
       <motion.div
+        key="sheet"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}

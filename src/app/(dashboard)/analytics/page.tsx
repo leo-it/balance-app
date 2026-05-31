@@ -253,12 +253,13 @@ export default async function AnalyticsPage() {
         <section className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
           <h2 className="mb-4 text-sm font-semibold text-zinc-300">Aportes a ahorros</h2>
           <div className="space-y-2">
-            {savingsContrib.map(({ month, ars, usd }) => (
+            {savingsContrib.map(({ month, ars, usd, eur }) => (
               <div key={month} className="flex justify-between text-sm">
                 <span className="capitalize text-zinc-400">{month}</span>
                 <div className="flex gap-3 tabular-nums">
                   {ars > 0 && <span className="text-emerald-400">ARS +{formatCurrency(ars)}</span>}
                   {usd > 0 && <span className="text-sky-400">USD +{formatCurrency(usd, 'USD')}</span>}
+                  {eur > 0 && <span className="text-violet-400">EUR +{formatCurrency(eur, 'EUR')}</span>}
                 </div>
               </div>
             ))}

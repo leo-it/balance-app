@@ -1,10 +1,10 @@
 import { createDbClient } from './client'
-import { isMissingTableError } from './health'
+import { isMissingColumnError, isMissingTableError } from './health'
 import {
   computeMonthlySummary,
   type MonthlySummary as DomainMonthlySummary,
 } from '@/lib/domain/budget'
-import type { BudgetState, DeviationStatus, SavingsJars } from '@/types/budget'
+import type { BudgetState, CryptoSavingsBalances, DeviationStatus, SavingsJars } from '@/types/budget'
 import type { FixedExpense, ExpenseStatus } from '@/types/expense'
 import type { Movement, MovementCurrency, MovementType, SavingsTarget } from '@/types/movement'
 
@@ -20,7 +20,22 @@ interface BudgetRow {
   savings_ars_current?: number
   savings_usd_goal?: number
   savings_usd_current?: number
+  savings_eur_goal?: number
+  savings_eur_current?: number
+  savings_crypto?: CryptoSavingsBalances | null
   deviation_status: DeviationStatus
+}
+
+function parseCryptoBalances(raw: unknown): CryptoSavingsBalances {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const result: CryptoSavingsBalances = {}
+  for (const [key, value] of Object.entries(raw)) {
+    const amount = parseDbNumeric(value)
+    if (amount > 0) {
+      result[key.toUpperCase()] = amount
+    }
+  }
+  return result
 }
 
 interface ExpenseRow {
@@ -37,11 +52,12 @@ interface MovementRow {
   id: string
   user_id: string
   description: string
-  amount: number
+  amount: number | string
   type: MovementType
   category: string
   icon_name: string
   currency?: MovementCurrency
+  crypto_symbol?: string | null
   savings_target?: SavingsTarget
   created_at: string
 }
@@ -52,6 +68,9 @@ function rowToSavingsJars(row: BudgetRow): SavingsJars {
     arsCurrent: Number(row.savings_ars_current ?? row.current_savings ?? 0),
     usdGoal: Number(row.savings_usd_goal ?? 0),
     usdCurrent: Number(row.savings_usd_current ?? 0),
+    eurGoal: Number(row.savings_eur_goal ?? 0),
+    eurCurrent: Number(row.savings_eur_current ?? 0),
+    crypto: parseCryptoBalances(row.savings_crypto),
   }
 }
 
@@ -66,16 +85,39 @@ function toFixedExpense(row: ExpenseRow): FixedExpense {
   }
 }
 
+function parseDbNumeric(raw: unknown): number {
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw
+  if (typeof raw === 'string') {
+    const parsed = Number(raw.trim().replace(',', '.'))
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return 0
+}
+
+function resolveMovementCurrency(
+  currency: MovementCurrency | undefined,
+  savingsTarget: SavingsTarget,
+  cryptoSymbol?: string,
+): MovementCurrency {
+  if (currency === 'USD' || currency === 'EUR' || currency === 'CRYPTO') return currency
+  if (savingsTarget === 'crypto' || cryptoSymbol) return 'CRYPTO'
+  return 'ARS'
+}
+
 function toMovement(row: MovementRow): Movement {
+  const cryptoSymbol = row.crypto_symbol?.trim() || undefined
+  const savingsTarget = row.savings_target ?? 'none'
+  const currency = resolveMovementCurrency(row.currency, savingsTarget, cryptoSymbol)
   return {
     id: row.id,
     description: row.description,
-    amount: Number(row.amount),
+    amount: parseDbNumeric(row.amount),
     type: row.type,
     category: row.category,
     iconName: row.icon_name,
-    currency: row.currency ?? 'ARS',
-    savingsTarget: row.savings_target ?? 'none',
+    currency,
+    savingsTarget,
+    ...(cryptoSymbol ? { cryptoSymbol } : {}),
     createdAt: row.created_at,
   }
 }
@@ -160,7 +202,12 @@ export async function getBudgetState(userId: string): Promise<BudgetState | null
     dailyBudget: summary.dailyAvailable,
     totalSpent: summary.totalSpent,
     monthRemaining: summary.monthRemaining,
+    spendableRemaining: summary.spendableRemaining,
     incomeTotal: summary.incomeTotal,
+    savingsContributionsArs: summary.savingsContributionsArs,
+    savingsContributionsUsd: summary.savingsContributionsUsd,
+    savingsContributionsEur: summary.savingsContributionsEur,
+    savingsContributionsCrypto: summary.savingsContributionsCrypto,
     fixedPaidTotal: summary.fixedPaidTotal,
     fixedPendingTotal: summary.fixedPendingTotal,
     variableExpensesTotal: summary.variableExpensesTotal,
@@ -276,6 +323,8 @@ export interface SavingsContributionMonth {
   month: string
   ars: number
   usd: number
+  eur: number
+  crypto: CryptoSavingsBalances
 }
 
 export async function getSavingsContributionsByMonth(
@@ -283,46 +332,68 @@ export async function getSavingsContributionsByMonth(
   months = 6,
 ): Promise<SavingsContributionMonth[]> {
   const movements = await getAllMovements(userId)
-  const byMonth = new Map<string, { ars: number; usd: number }>()
+  const byMonth = new Map<string, { ars: number; usd: number; eur: number; crypto: CryptoSavingsBalances }>()
 
   for (const m of movements) {
     if (m.savingsTarget === 'none') continue
     const date = new Date(m.createdAt)
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-    const entry = byMonth.get(key) ?? { ars: 0, usd: 0 }
+    const entry = byMonth.get(key) ?? { ars: 0, usd: 0, eur: 0, crypto: {} }
     if (m.savingsTarget === 'ars') entry.ars += m.amount
     if (m.savingsTarget === 'usd') entry.usd += m.amount
+    if (m.savingsTarget === 'eur') entry.eur += m.amount
+    if (m.savingsTarget === 'crypto') {
+      const symbol = (m.cryptoSymbol ?? 'CRIPTO').toUpperCase()
+      entry.crypto[symbol] = (entry.crypto[symbol] ?? 0) + m.amount
+    }
     byMonth.set(key, entry)
   }
 
   const sorted = [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b))
-  return sorted.slice(-months).map(([key, { ars, usd }]) => {
+  return sorted.slice(-months).map(([key, { ars, usd, eur, crypto }]) => {
     const [, monthNum] = key.split('-')
     const monthLabel = new Intl.DateTimeFormat('es-AR', { month: 'short' })
       .format(new Date(2000, Number(monthNum) - 1, 1))
-    return { month: monthLabel.replace('.', ''), ars, usd }
+    return { month: monthLabel.replace('.', ''), ars, usd, eur, crypto }
   })
 }
 
 export async function initUserData(userId: string): Promise<void> {
   const db = createDbClient()
 
-  const { error } = await db.from('budget_state').upsert(
-    {
-      user_id: userId,
-      daily_budget: 0,
-      monthly_budget: 0,
-      total_spent: 0,
-      savings_goal: 0,
-      current_savings: 0,
-      savings_ars_goal: 0,
-      savings_ars_current: 0,
-      savings_usd_goal: 0,
-      savings_usd_current: 0,
-      deviation_status: 'ok',
-    },
-    { onConflict: 'user_id' },
-  )
+  const fullRow = {
+    user_id: userId,
+    daily_budget: 0,
+    monthly_budget: 0,
+    total_spent: 0,
+    savings_goal: 0,
+    current_savings: 0,
+    savings_ars_goal: 0,
+    savings_ars_current: 0,
+    savings_usd_goal: 0,
+    savings_usd_current: 0,
+    savings_eur_goal: 0,
+    savings_eur_current: 0,
+    savings_crypto: {},
+    deviation_status: 'ok',
+  }
+
+  let { error } = await db.from('budget_state').upsert(fullRow, { onConflict: 'user_id' })
+
+  if (error && isMissingColumnError(error.message)) {
+    ;({ error } = await db.from('budget_state').upsert(
+      {
+        user_id: userId,
+        daily_budget: 0,
+        monthly_budget: 0,
+        total_spent: 0,
+        savings_goal: 0,
+        current_savings: 0,
+        deviation_status: 'ok',
+      },
+      { onConflict: 'user_id' },
+    ))
+  }
 
   if (error) throw new Error(error.message)
 }
@@ -335,6 +406,8 @@ export async function updateBudgetConfig(
     savingsArsCurrent?: number
     savingsUsdGoal?: number
     savingsUsdCurrent?: number
+    savingsEurGoal?: number
+    savingsEurCurrent?: number
   },
 ): Promise<void> {
   const db = createDbClient()
@@ -351,19 +424,69 @@ export async function updateBudgetConfig(
   }
   if (patch.savingsUsdGoal !== undefined) row.savings_usd_goal = patch.savingsUsdGoal
   if (patch.savingsUsdCurrent !== undefined) row.savings_usd_current = patch.savingsUsdCurrent
+  if (patch.savingsEurGoal !== undefined) row.savings_eur_goal = patch.savingsEurGoal
+  if (patch.savingsEurCurrent !== undefined) row.savings_eur_current = patch.savingsEurCurrent
 
-  const { error } = await db.from('budget_state').update(row).eq('user_id', userId)
+  let { error } = await db.from('budget_state').update(row).eq('user_id', userId)
+
+  if (error && isMissingColumnError(error.message)) {
+    delete row.savings_ars_goal
+    delete row.savings_ars_current
+    delete row.savings_usd_goal
+    delete row.savings_usd_current
+    delete row.savings_eur_goal
+    delete row.savings_eur_current
+    ;({ error } = await db.from('budget_state').update(row).eq('user_id', userId))
+  }
+
   if (error) throw new Error(error.message)
 
   await syncBudgetSnapshot(userId)
+}
+
+async function updateCryptoSavings(
+  userId: string,
+  symbol: string,
+  delta: number,
+): Promise<void> {
+  const row = await fetchBudgetRow(userId)
+  if (!row) return
+
+  const key = symbol.toUpperCase()
+  const balances = parseCryptoBalances(row.savings_crypto)
+  const next = Math.max(0, (balances[key] ?? 0) + delta)
+  const updated: CryptoSavingsBalances = { ...balances }
+
+  if (next === 0) {
+    delete updated[key]
+  } else {
+    updated[key] = next
+  }
+
+  const db = createDbClient()
+  const { error } = await db
+    .from('budget_state')
+    .update({ savings_crypto: updated })
+    .eq('user_id', userId)
+
+  if (error && isMissingColumnError(error.message)) return
+  if (error) throw new Error(error.message)
 }
 
 export async function applySavingsFromMovement(
   userId: string,
   amount: number,
   target: SavingsTarget,
+  cryptoSymbol?: string,
 ): Promise<void> {
   if (target === 'none') return
+
+  if (target === 'crypto') {
+    const symbol = cryptoSymbol?.trim()
+    if (!symbol) throw new Error('Indicá la criptomoneda para el ahorro')
+    await updateCryptoSavings(userId, symbol, amount)
+    return
+  }
 
   const jars = await getSavingsJars(userId)
   if (!jars) return
@@ -371,7 +494,9 @@ export async function applySavingsFromMovement(
   const patch =
     target === 'ars'
       ? { savingsArsCurrent: jars.arsCurrent + amount }
-      : { savingsUsdCurrent: jars.usdCurrent + amount }
+      : target === 'usd'
+        ? { savingsUsdCurrent: jars.usdCurrent + amount }
+        : { savingsEurCurrent: jars.eurCurrent + amount }
 
   await updateBudgetConfig(userId, patch)
 }
@@ -380,8 +505,16 @@ export async function reverseSavingsFromMovement(
   userId: string,
   amount: number,
   target: SavingsTarget,
+  cryptoSymbol?: string,
 ): Promise<void> {
   if (target === 'none') return
+
+  if (target === 'crypto') {
+    const symbol = cryptoSymbol?.trim()
+    if (!symbol) return
+    await updateCryptoSavings(userId, symbol, -amount)
+    return
+  }
 
   const jars = await getSavingsJars(userId)
   if (!jars) return
@@ -389,7 +522,109 @@ export async function reverseSavingsFromMovement(
   const patch =
     target === 'ars'
       ? { savingsArsCurrent: Math.max(0, jars.arsCurrent - amount) }
-      : { savingsUsdCurrent: Math.max(0, jars.usdCurrent - amount) }
+      : target === 'usd'
+        ? { savingsUsdCurrent: Math.max(0, jars.usdCurrent - amount) }
+        : { savingsEurCurrent: Math.max(0, jars.eurCurrent - amount) }
 
   await updateBudgetConfig(userId, patch)
+}
+
+export async function fetchMovementRow(
+  userId: string,
+  movementId: string,
+): Promise<MovementRow> {
+  const db = createDbClient()
+  const { data, error } = await db
+    .from('movements')
+    .select('*')
+    .eq('id', movementId)
+    .eq('user_id', userId)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as MovementRow
+}
+
+interface MovementWriteInput {
+  description: string
+  amount: number
+  type: MovementType
+  category: string
+  iconName: string
+  currency: MovementCurrency
+  cryptoSymbol?: string
+  savingsTarget: SavingsTarget
+}
+
+function movementRowPayload(input: MovementWriteInput): Record<string, unknown> {
+  const symbol = input.cryptoSymbol?.trim().toUpperCase()
+  return {
+    description: input.description,
+    amount: input.amount,
+    type: input.type,
+    category: input.category,
+    icon_name: input.iconName,
+    currency: input.currency,
+    savings_target: input.savingsTarget,
+    crypto_symbol: symbol ?? null,
+  }
+}
+
+export async function insertMovementRow(
+  userId: string,
+  input: MovementWriteInput & { createdAt: string },
+): Promise<void> {
+  const db = createDbClient()
+  const fullRow = {
+    user_id: userId,
+    ...movementRowPayload(input),
+    created_at: input.createdAt,
+  }
+
+  let { error } = await db.from('movements').insert(fullRow)
+
+  if (error && isMissingColumnError(error.message)) {
+    ;({ error } = await db.from('movements').insert({
+      user_id: userId,
+      description: input.description,
+      amount: input.amount,
+      type: input.type,
+      category: input.category,
+      icon_name: input.iconName,
+      created_at: input.createdAt,
+    }))
+  }
+
+  if (error) throw new Error(error.message)
+}
+
+export async function updateMovementRow(
+  userId: string,
+  movementId: string,
+  input: MovementWriteInput,
+): Promise<void> {
+  const db = createDbClient()
+  const fullRow = movementRowPayload(input)
+
+  let { error } = await db
+    .from('movements')
+    .update(fullRow)
+    .eq('id', movementId)
+    .eq('user_id', userId)
+
+  if (error && isMissingColumnError(error.message)) {
+    ;({ error } = await db
+      .from('movements')
+      .update({
+        description: input.description,
+        amount: input.amount,
+        type: input.type,
+        category: input.category,
+        icon_name: input.iconName,
+      })
+      .eq('id', movementId)
+      .eq('user_id', userId))
+  }
+
+  if (error) throw new Error(error.message)
 }

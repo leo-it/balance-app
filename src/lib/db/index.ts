@@ -1,7 +1,7 @@
 export { createDbClient } from './client'
 export { createServerDbClient } from './server'
 export { createBrowserDbClient } from './browser'
-export { isDatabaseReady, isMissingTableError } from './health'
+export { isDatabaseReady, isDualCurrencySchemaReady, isMissingColumnError, isMissingTableError } from './health'
 export {
   getBudgetState,
   getFixedExpenses,
@@ -20,6 +20,9 @@ export {
   updateBudgetConfig,
   applySavingsFromMovement,
   reverseSavingsFromMovement,
+  fetchMovementRow,
+  insertMovementRow,
+  updateMovementRow,
 } from './queries'
 export type {
   CategorySpend,

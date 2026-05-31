@@ -27,6 +27,8 @@ export async function updateBudgetSettings(
     const savingsArsCurrent = parseAmount(formData.get('savingsArsCurrent'))
     const savingsUsdGoal = parseAmount(formData.get('savingsUsdGoal'))
     const savingsUsdCurrent = parseAmount(formData.get('savingsUsdCurrent'))
+    const savingsEurGoal = parseAmount(formData.get('savingsEurGoal'))
+    const savingsEurCurrent = parseAmount(formData.get('savingsEurCurrent'))
 
     const patch: Parameters<typeof updateBudgetConfig>[1] = {}
     if (monthlyBudget !== null) patch.monthlyBudget = monthlyBudget
@@ -34,6 +36,8 @@ export async function updateBudgetSettings(
     if (savingsArsCurrent !== null) patch.savingsArsCurrent = savingsArsCurrent
     if (savingsUsdGoal !== null) patch.savingsUsdGoal = savingsUsdGoal
     if (savingsUsdCurrent !== null) patch.savingsUsdCurrent = savingsUsdCurrent
+    if (savingsEurGoal !== null) patch.savingsEurGoal = savingsEurGoal
+    if (savingsEurCurrent !== null) patch.savingsEurCurrent = savingsEurCurrent
 
     if (Object.keys(patch).length === 0) {
       return { error: 'Completá al menos un campo' }

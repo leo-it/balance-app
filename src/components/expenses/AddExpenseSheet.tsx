@@ -7,6 +7,8 @@ import { addFixedExpense } from '@/actions/expense.actions'
 import { addMovement } from '@/actions/movement.actions'
 import { MovementExtraFields } from './MovementExtraFields'
 import type { FormActionState } from '@/types/form-action'
+import type { MovementCurrency, SavingsTarget } from '@/types/movement'
+import { movementAmountStep } from '@/lib/amount-input'
 import { cn } from '@/lib/utils'
 
 const INITIAL: FormActionState = { error: null }
@@ -56,6 +58,8 @@ interface AddExpenseSheetProps {
 
 export function AddExpenseSheet({ onClose }: AddExpenseSheetProps) {
   const [tab, setTab] = useState<Tab>('movement')
+  const [movementCurrency, setMovementCurrency] = useState<MovementCurrency>('ARS')
+  const [savingsTarget, setSavingsTarget] = useState<SavingsTarget>('none')
   const [fixedState, fixedAction, fixedPending] = useActionState(addFixedExpense, INITIAL)
   const [movementState, movementAction, movementPending] = useActionState(addMovement, INITIAL)
 
@@ -71,6 +75,7 @@ export function AddExpenseSheet({ onClose }: AddExpenseSheetProps) {
   return (
     <AnimatePresence>
       <motion.button
+        key="backdrop"
         type="button"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -81,6 +86,7 @@ export function AddExpenseSheet({ onClose }: AddExpenseSheetProps) {
       />
 
       <motion.div
+        key="sheet"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -111,18 +117,24 @@ export function AddExpenseSheet({ onClose }: AddExpenseSheetProps) {
         {tab === 'movement' ? (
           <form action={movementAction} className="space-y-4">
             <Field label="Descripción" name="description" placeholder="Ej. Supermercado" required />
+
+            <MovementExtraFields
+              currency={movementCurrency}
+              onCurrencyChange={setMovementCurrency}
+              savingsTarget={savingsTarget}
+              onSavingsTargetChange={setSavingsTarget}
+            />
+
             <Field
               label="Monto"
               name="amount"
               type="number"
               inputMode="decimal"
-              placeholder="0"
+              placeholder={movementCurrency === 'CRYPTO' ? '0.0001' : '0'}
               required
               min="0"
-              step="0.01"
+              step={movementAmountStep(movementCurrency, savingsTarget)}
             />
-
-            <MovementExtraFields />
 
             <SelectField label="Categoría" name="category" options={CATEGORIES} />
             <SelectField label="Ícono" name="iconName" options={MOVEMENT_ICONS} />

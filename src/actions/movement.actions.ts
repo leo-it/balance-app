@@ -3,7 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import { getUserId } from '@/lib/auth'
 import { assertDatabase } from '@/lib/env'
-import { applySavingsFromMovement, createDbClient, reverseSavingsFromMovement, syncBudgetSnapshot } from '@/lib/db'
+import {
+  applySavingsFromMovement,
+  createDbClient,
+  fetchMovementRow,
+  insertMovementRow,
+  reverseSavingsFromMovement,
+  syncBudgetSnapshot,
+  updateMovementRow,
+} from '@/lib/db'
 import { sendToN8n } from '@/lib/n8n'
 import type { FormActionState } from '@/types/form-action'
 import type { MovementCurrency, MovementType, SavingsTarget } from '@/types/movement'
@@ -18,12 +26,51 @@ function parseAmount(raw: FormDataEntryValue | null): number | null {
 function parseSavingsTarget(raw: FormDataEntryValue | null, type: MovementType): SavingsTarget {
   if (type !== 'income') return 'none'
   const value = String(raw ?? 'none')
-  if (value === 'ars' || value === 'usd') return value
+  if (value === 'ars' || value === 'usd' || value === 'eur' || value === 'crypto') return value
   return 'none'
 }
 
 function parseCurrency(raw: FormDataEntryValue | null): MovementCurrency {
-  return String(raw ?? 'ARS') === 'USD' ? 'USD' : 'ARS'
+  const value = String(raw ?? 'ARS')
+  if (value === 'USD' || value === 'EUR' || value === 'CRYPTO') return value
+  return 'ARS'
+}
+
+function parseCryptoSymbol(
+  raw: FormDataEntryValue | null,
+  currency: MovementCurrency,
+  savingsTarget: SavingsTarget,
+): string | undefined {
+  const symbol = String(raw ?? '').trim().toUpperCase()
+  const needsSymbol = currency === 'CRYPTO' || savingsTarget === 'crypto'
+  if (!needsSymbol) return undefined
+  if (!symbol) return undefined
+  return symbol
+}
+
+function normalizeMovementCurrency(
+  currency: MovementCurrency,
+  savingsTarget: SavingsTarget,
+  cryptoSymbol: string | undefined,
+): MovementCurrency {
+  if (savingsTarget === 'crypto' || currency === 'CRYPTO' || cryptoSymbol) {
+    return 'CRYPTO'
+  }
+  return currency
+}
+
+function validateMovementMeta(
+  currency: MovementCurrency,
+  savingsTarget: SavingsTarget,
+  cryptoSymbol: string | undefined,
+): string | null {
+  if (currency === 'CRYPTO' && !cryptoSymbol) {
+    return 'Ingresá el símbolo de la cripto (ej. BTC, ETH, USDT)'
+  }
+  if (savingsTarget === 'crypto' && !cryptoSymbol) {
+    return 'Ingresá el símbolo de la cripto para el ahorro'
+  }
+  return null
 }
 
 export async function addMovement(
@@ -39,12 +86,22 @@ export async function addMovement(
     const typeRaw = String(formData.get('type') ?? 'expense')
     const type: MovementType = typeRaw === 'income' ? 'income' : 'expense'
     const iconName = String(formData.get('iconName') ?? 'Receipt').trim() || 'Receipt'
-    const currency = parseCurrency(formData.get('currency'))
     const savingsTarget = parseSavingsTarget(formData.get('savingsTarget'), type)
+    const parsedCurrency = parseCurrency(formData.get('currency'))
+    const cryptoSymbol = parseCryptoSymbol(
+      formData.get('cryptoSymbol'),
+      parsedCurrency,
+      savingsTarget,
+    )
+    const currency = normalizeMovementCurrency(parsedCurrency, savingsTarget, cryptoSymbol)
 
     if (!description) return { error: 'Ingresá una descripción' }
     if (amount === null) return { error: 'Ingresá un monto válido mayor a 0' }
 
+    const metaError = validateMovementMeta(currency, savingsTarget, cryptoSymbol)
+    if (metaError) return { error: metaError }
+
+    const createdAt = new Date().toISOString()
     const movement = {
       user_id: userId,
       description,
@@ -53,18 +110,27 @@ export async function addMovement(
       category,
       icon_name: iconName,
       currency,
+      crypto_symbol: cryptoSymbol ?? null,
       savings_target: savingsTarget,
-      created_at: new Date().toISOString(),
+      created_at: createdAt,
     }
 
-    const db = createDbClient()
-    const { error } = await db.from('movements').insert(movement)
-    if (error) return { error: error.message }
+    await insertMovementRow(userId, {
+      description,
+      amount,
+      type,
+      category,
+      iconName,
+      currency,
+      cryptoSymbol,
+      savingsTarget,
+      createdAt,
+    })
 
     await Promise.all([
       sendToN8n({ userId, action: 'add_movement', payload: movement }),
       syncBudgetSnapshot(userId),
-      applySavingsFromMovement(userId, amount, savingsTarget),
+      applySavingsFromMovement(userId, amount, savingsTarget, cryptoSymbol),
     ])
 
     revalidatePath('/')
@@ -82,14 +148,9 @@ export async function deleteMovement(movementId: string): Promise<void> {
   const userId = await getUserId()
   const db = createDbClient()
 
-  const { data, error: fetchError } = await db
-    .from('movements')
-    .select('amount, savings_target')
-    .eq('id', movementId)
-    .eq('user_id', userId)
-    .single()
-
-  if (fetchError) throw new Error(fetchError.message)
+  const existing = await fetchMovementRow(userId, movementId)
+  const savingsTarget = (existing.savings_target ?? 'none') as SavingsTarget
+  const cryptoSymbol = existing.crypto_symbol?.trim() || undefined
 
   const { error } = await db
     .from('movements')
@@ -99,11 +160,9 @@ export async function deleteMovement(movementId: string): Promise<void> {
 
   if (error) throw new Error(error.message)
 
-  const savingsTarget = (data?.savings_target ?? 'none') as SavingsTarget
-
   await Promise.all([
     sendToN8n({ userId, action: 'delete_movement', payload: { movementId } }),
-    reverseSavingsFromMovement(userId, Number(data?.amount ?? 0), savingsTarget),
+    reverseSavingsFromMovement(userId, Number(existing.amount ?? 0), savingsTarget, cryptoSymbol),
     syncBudgetSnapshot(userId),
   ])
 
@@ -127,41 +186,37 @@ export async function updateMovement(
     const typeRaw = String(formData.get('type') ?? 'expense')
     const type: MovementType = typeRaw === 'income' ? 'income' : 'expense'
     const iconName = String(formData.get('iconName') ?? 'Receipt').trim() || 'Receipt'
-    const currency = parseCurrency(formData.get('currency'))
     const savingsTarget = parseSavingsTarget(formData.get('savingsTarget'), type)
+    const parsedCurrency = parseCurrency(formData.get('currency'))
+    const cryptoSymbol = parseCryptoSymbol(
+      formData.get('cryptoSymbol'),
+      parsedCurrency,
+      savingsTarget,
+    )
+    const currency = normalizeMovementCurrency(parsedCurrency, savingsTarget, cryptoSymbol)
 
     if (!movementId) return { error: 'Movimiento no válido' }
     if (!description) return { error: 'Ingresá una descripción' }
     if (amount === null) return { error: 'Ingresá un monto válido mayor a 0' }
 
-    const db = createDbClient()
-    const { data: existing, error: fetchError } = await db
-      .from('movements')
-      .select('amount, savings_target')
-      .eq('id', movementId)
-      .eq('user_id', userId)
-      .single()
+    const metaError = validateMovementMeta(currency, savingsTarget, cryptoSymbol)
+    if (metaError) return { error: metaError }
 
-    if (fetchError) return { error: fetchError.message }
+    const existing = await fetchMovementRow(userId, movementId)
+    const oldTarget = (existing.savings_target ?? 'none') as SavingsTarget
+    const oldAmount = Number(existing.amount ?? 0)
+    const oldCryptoSymbol = existing.crypto_symbol?.trim() || undefined
 
-    const oldTarget = (existing?.savings_target ?? 'none') as SavingsTarget
-    const oldAmount = Number(existing?.amount ?? 0)
-
-    const { error } = await db
-      .from('movements')
-      .update({
-        description,
-        amount,
-        type,
-        category,
-        icon_name: iconName,
-        currency,
-        savings_target: savingsTarget,
-      })
-      .eq('id', movementId)
-      .eq('user_id', userId)
-
-    if (error) return { error: error.message }
+    await updateMovementRow(userId, movementId, {
+      description,
+      amount,
+      type,
+      category,
+      iconName,
+      currency,
+      cryptoSymbol,
+      savingsTarget,
+    })
 
     await Promise.all([
       sendToN8n({
@@ -169,8 +224,8 @@ export async function updateMovement(
         action: 'update_movement',
         payload: { movementId, description, amount, type, category },
       }),
-      reverseSavingsFromMovement(userId, oldAmount, oldTarget),
-      applySavingsFromMovement(userId, amount, savingsTarget),
+      reverseSavingsFromMovement(userId, oldAmount, oldTarget, oldCryptoSymbol),
+      applySavingsFromMovement(userId, amount, savingsTarget, cryptoSymbol),
       syncBudgetSnapshot(userId),
     ])
 

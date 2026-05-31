@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
-  computeMonthlySummary,
   applySavingsContribution,
+  computeCryptoSavingsBalanceFromMovements,
+  computeMonthlySummary,
   getMonthContext,
+  resolveCryptoSavingsBalances,
 } from './budget'
 import type { FixedExpense } from '@/types/expense'
 import type { Movement } from '@/types/movement'
@@ -54,16 +56,46 @@ describe('computeMonthlySummary', () => {
     expect(summary.monthRemaining).toBe(100_000 - 30_000 - 5_000 + 20_000)
   })
 
-  it('calcula disponible hoy dividiendo restante entre días restantes', () => {
-    const ctx = getMonthContext(NOW)
+  it('no suma ingresos al ahorro ni otras monedas al presupuesto en pesos', () => {
     const summary = computeMonthlySummary({
       monthlyBudget: 100_000,
       fixedExpenses: [],
+      movements: [
+        movement({ amount: 3_000_000, type: 'income', currency: 'ARS', savingsTarget: 'none' }),
+        movement({ amount: 500, type: 'income', currency: 'USD', savingsTarget: 'usd' }),
+        movement({ amount: 50_000, type: 'income', currency: 'ARS', savingsTarget: 'ars' }),
+        movement({ amount: 200, type: 'income', currency: 'EUR', savingsTarget: 'eur' }),
+        movement({
+          amount: 0.25,
+          type: 'income',
+          currency: 'CRYPTO',
+          cryptoSymbol: 'BTC',
+          savingsTarget: 'crypto',
+        }),
+      ],
+      now: NOW,
+    })
+
+    expect(summary.incomeTotal).toBe(3_000_000)
+    expect(summary.savingsContributionsArs).toBe(50_000)
+    expect(summary.savingsContributionsUsd).toBe(500)
+    expect(summary.savingsContributionsEur).toBe(200)
+    expect(summary.savingsContributionsCrypto.BTC).toBe(0.25)
+    expect(summary.monthRemaining).toBe(100_000 + 3_000_000)
+  })
+
+  it('calcula disponible hoy descontando fijos pendientes', () => {
+    const ctx = getMonthContext(NOW)
+    const summary = computeMonthlySummary({
+      monthlyBudget: 100_000,
+      fixedExpenses: [fixed({ amount: 10_000, status: 'pending' })],
       movements: [],
       now: NOW,
     })
 
-    expect(summary.dailyAvailable).toBe(100_000 / ctx.daysRemaining)
+    expect(summary.monthRemaining).toBe(100_000)
+    expect(summary.spendableRemaining).toBe(90_000)
+    expect(summary.dailyAvailable).toBe(90_000 / ctx.daysRemaining)
   })
 
   it('no cuenta fijos pagados en otro mes', () => {
@@ -82,17 +114,53 @@ describe('computeMonthlySummary', () => {
 })
 
 describe('applySavingsContribution', () => {
-  const jars = { arsGoal: 100, arsCurrent: 10, usdGoal: 50, usdCurrent: 5 }
+  const jars = {
+    arsGoal: 100,
+    arsCurrent: 10,
+    usdGoal: 50,
+    usdCurrent: 5,
+    eurGoal: 80,
+    eurCurrent: 8,
+    crypto: { BTC: 1 },
+  }
 
-  it('aporta solo al jar ARS', () => {
+  it('aporta solo al ahorro ARS', () => {
     const next = applySavingsContribution(jars, 20, 'ars')
     expect(next.arsCurrent).toBe(30)
     expect(next.usdCurrent).toBe(5)
   })
 
-  it('aporta solo al jar USD', () => {
+  it('aporta solo al ahorro USD', () => {
     const next = applySavingsContribution(jars, 15, 'usd')
     expect(next.usdCurrent).toBe(20)
     expect(next.arsCurrent).toBe(10)
+  })
+
+  it('aporta solo al ahorro EUR', () => {
+    const next = applySavingsContribution(jars, 12, 'eur')
+    expect(next.eurCurrent).toBe(20)
+  })
+
+  it('aporta solo al ahorro cripto indicado', () => {
+    const next = applySavingsContribution(jars, 0.5, 'crypto', 'btc')
+    expect(next.crypto.BTC).toBe(1.5)
+  })
+})
+
+describe('crypto savings balances', () => {
+  it('calcula saldo acumulado desde ingresos con ahorro cripto', () => {
+    const balance = computeCryptoSavingsBalanceFromMovements([
+      movement({ amount: 0.0001, type: 'income', savingsTarget: 'crypto', cryptoSymbol: 'BTC' }),
+      movement({ amount: 0.5, type: 'income', savingsTarget: 'crypto', cryptoSymbol: 'BTC' }),
+    ])
+    expect(balance.BTC).toBeCloseTo(0.5001)
+  })
+
+  it('usa movimientos si budget_state no tiene saldo cripto guardado', () => {
+    const resolved = resolveCryptoSavingsBalances(
+      {},
+      [movement({ amount: 0.25, type: 'income', savingsTarget: 'crypto', cryptoSymbol: 'ETH' })],
+    )
+    expect(resolved.ETH).toBe(0.25)
   })
 })

@@ -1,12 +1,13 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { X } from 'lucide-react'
 import { updateMovement } from '@/actions/movement.actions'
 import { MovementExtraFields } from './MovementExtraFields'
 import type { FormActionState } from '@/types/form-action'
-import type { Movement } from '@/types/movement'
+import type { Movement, MovementCurrency, SavingsTarget } from '@/types/movement'
+import { movementAmountStep } from '@/lib/amount-input'
 
 const INITIAL: FormActionState = { error: null }
 
@@ -42,6 +43,8 @@ interface EditMovementSheetProps {
 
 export function EditMovementSheet({ movement, onClose }: EditMovementSheetProps) {
   const [state, action, pending] = useActionState(updateMovement, INITIAL)
+  const [currency, setCurrency] = useState<MovementCurrency>(movement.currency)
+  const [savingsTarget, setSavingsTarget] = useState<SavingsTarget>(movement.savingsTarget)
 
   useEffect(() => {
     if (state.success) onClose()
@@ -50,6 +53,7 @@ export function EditMovementSheet({ movement, onClose }: EditMovementSheetProps)
   return (
     <AnimatePresence>
       <motion.button
+        key="backdrop"
         type="button"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -60,6 +64,7 @@ export function EditMovementSheet({ movement, onClose }: EditMovementSheetProps)
       />
 
       <motion.div
+        key="sheet"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -94,6 +99,17 @@ export function EditMovementSheet({ movement, onClose }: EditMovementSheetProps)
             />
           </div>
 
+          <MovementExtraFields
+            defaultType={movement.type}
+            defaultCurrency={movement.currency}
+            defaultSavingsTarget={movement.savingsTarget}
+            defaultCryptoSymbol={movement.cryptoSymbol ?? ''}
+            currency={currency}
+            onCurrencyChange={setCurrency}
+            savingsTarget={savingsTarget}
+            onSavingsTargetChange={setSavingsTarget}
+          />
+
           <div>
             <label htmlFor="amount" className={labelClass}>
               Monto
@@ -104,18 +120,13 @@ export function EditMovementSheet({ movement, onClose }: EditMovementSheetProps)
               type="number"
               inputMode="decimal"
               defaultValue={movement.amount}
+              placeholder={currency === 'CRYPTO' ? '0.0001' : '0'}
               className={inputClass}
               required
               min="0"
-              step="0.01"
+              step={movementAmountStep(currency, savingsTarget)}
             />
           </div>
-
-          <MovementExtraFields
-            defaultType={movement.type}
-            defaultCurrency={movement.currency}
-            defaultSavingsTarget={movement.savingsTarget}
-          />
 
           <div>
             <label htmlFor="category" className={labelClass}>

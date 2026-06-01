@@ -57,8 +57,12 @@ export function InstallAppCard() {
       <div className="space-y-3 py-1">
         <p className="text-sm text-emerald-400">{APP_NAME} ya está en tu pantalla de inicio.</p>
         <p className="text-xs text-zinc-500">
-          Mantené presionado el ícono → <strong className="text-zinc-400">Resumen rápido</strong>{' '}
-          para ver disponible hoy sin abrir toda la app.
+          Es un acceso directo a la app, no un widget de la pantalla de inicio. Los números se ven
+          al abrirla o en{' '}
+          <Link href="/resumen" className="text-emerald-400 hover:underline">
+            Resumen
+          </Link>
+          .
         </p>
         <Link
           href="/resumen"
@@ -74,12 +78,12 @@ export function InstallAppCard() {
   return (
     <div className="space-y-4 py-1">
       <p className="text-sm text-zinc-400">
-        Instalá {APP_NAME} como app en Android. Es el MVP del &quot;widget&quot;: acceso directo desde
-        el inicio y vista compacta en{' '}
+        Instalá {APP_NAME} como app en Android: ícono en el inicio y acceso rápido a{' '}
         <Link href="/resumen" className="text-emerald-400 hover:underline">
           Resumen
         </Link>
-        .
+        . <strong className="text-zinc-300">No es un widget nativo</strong> — hay que abrir la app
+        para ver los datos.
       </p>
 
       {deferredPrompt && (
@@ -118,9 +122,15 @@ export function InstallAppCard() {
         </p>
       )}
 
-      <p className="text-xs text-zinc-600">
-        El widget nativo 2×2 (sin abrir la app) requiere la APK Android — próxima fase.
-      </p>
+      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-zinc-400">
+        <p className="font-medium text-amber-200/90">Widget nativo (datos sin abrir la app)</p>
+        <ol className="mt-2 list-decimal space-y-1 pl-4 text-xs text-zinc-500">
+          <li>Configurá <code className="text-zinc-400">WIDGET_API_KEY</code> en Vercel y en <code className="text-zinc-400">android/gradle.properties</code></li>
+          <li>Compilá la APK: <code className="text-zinc-400">pnpm cap:sync</code> → <code className="text-zinc-400">pnpm android:open</code></li>
+          <li>Instalá la APK, iniciá sesión, agregá el widget 2×2 desde el inicio</li>
+        </ol>
+        <p className="mt-2 text-xs text-zinc-600">Guía completa en docs/WIDGET-ANDROID.md</p>
+      </div>
     </div>
   )
 }

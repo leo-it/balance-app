@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#18181b"
@@ -9,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Balance App"
+        android:text="@string/widget_brand"
         android:textColor="#a1a1aa"
         android:textSize="11sp" />
 
@@ -26,7 +27,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Restante gastable"
+        android:text="@string/widget_spendable_label"
         android:textColor="#71717a"
         android:textSize="10sp" />
 

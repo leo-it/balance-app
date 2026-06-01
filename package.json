@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "cap:sync": "npx cap sync android && node scripts/integrate-android-widget.mjs",
+    "android:integrate-widget": "node scripts/integrate-android-widget.mjs",
+    "android:open": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",

@@ -37,6 +37,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# android (Capacitor)
+/android/local.properties
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/captures/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

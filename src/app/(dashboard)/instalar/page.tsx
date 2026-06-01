@@ -23,7 +23,15 @@ export default function InstalarPage() {
         </section>
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-          <h2 className="text-sm font-semibold text-zinc-200">Vista resumen (widget)</h2>
+          <h2 className="text-sm font-semibold text-zinc-200">Vista resumen (dentro de la app)</h2>
+          <p className="mt-2 text-sm text-zinc-400">
+            Atajo web en{' '}
+            <Link href="/resumen" className="text-emerald-400 hover:underline">
+              /resumen
+            </Link>
+            . Abrís la app y ves una pantalla compacta — <strong className="text-zinc-300">no</strong>{' '}
+            un widget del sistema que muestre números sin tocar nada.
+          </p>
           <p className="mt-2 text-sm text-zinc-400">
             Por defecto: <strong className="text-zinc-300">restante gastable</strong>,{' '}
             <strong className="text-zinc-300">gastos del mes</strong> y{' '}

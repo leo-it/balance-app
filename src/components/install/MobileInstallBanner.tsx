@@ -34,7 +34,7 @@ export function MobileInstallBanner() {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-emerald-100">Instalá {APP_NAME} en tu celular</p>
           <p className="mt-0.5 text-xs text-emerald-200/80">
-            Acceso rápido desde el inicio y vista resumen tipo widget.
+            Ícono en el inicio. Para ver números sin abrir la app hace falta el widget nativo (APK).
           </p>
           <Link
             href="/instalar"

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">Balance App</string>
+    <string name="widget_description">Restante gastable, gastos del mes y ahorro USD</string>
+    <string name="widget_brand">Balance App</string>
+    <string name="widget_spendable_label">Restante gastable</string>
+</resources>

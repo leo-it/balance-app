@@ -160,23 +160,20 @@ Regla del proyecto: solo animar interacción directa del usuario (`AGENTS.md`). 
 
 **Estado actual:**
 
-- API lista: `GET /api/widget/summary` (`src/app/api/widget/summary/route.ts`)
-- Ruta pública en `proxy.ts`: `/api/widget(.*)`
-- **Android:** código base en `android/widget-src/` + guía en `android/README.md` (App Widget 2×2, Kotlin) — **falta integrar** en proyecto Capacitor generado (`npx cap add android` + copiar providers)
-- **iOS:** no implementado — requiere extensión **WidgetKit** (Swift) separada del WebView Capacitor
-- Capacitor config: `capacitor.config.ts` (`com.leoit.balanceapp`, `webDir: out`)
+- API lista: `GET /api/widget/summary`
+- **Android:** proyecto Capacitor en `android/` + widget Kotlin integrado (`BalanceAppWidgetProvider`)
+- Plugin Capacitor `WidgetConfig` sincroniza `userId` al abrir la app
+- Guía: `docs/WIDGET-ANDROID.md`
+- **iOS:** no implementado (WidgetKit)
 
 **Tareas:**
 
-- [ ] Completar flujo Android: `cap add android`, copiar `widget-src`, registrar `BalanceAppWidgetProvider` en `AndroidManifest.xml`
-- [ ] UI widget Android: disponible hoy, restante mes, ahorro ARS/USD, tap → abrir app en `/` o `/resumen`
-- [ ] Guardar en app `userId` + `WIDGET_API_KEY` en SharedPreferences (tras login Clerk) para refresh del widget
-- [ ] `WorkManager` o `AlarmManager` para actualizar widget cada N horas (y al abrir app)
-- [ ] **iOS WidgetKit:** target extensión en Xcode, TimelineProvider que llame a `/api/widget/summary` con Bearer + `userId`
-- [ ] Widget iOS pequeño (systemSmall) y mediano — mismo JSON que Android
-- [ ] Documentar en `docs/` flujo completo: env vars, build firmado, prueba en dispositivo
-- [ ] Opcional: **Live Activity** / Dynamic Island (iOS) para «disponible hoy» — esfuerzo alto, fase 2
-- [ ] Extender API widget: incluir cripto, EUR, `spendableRemaining` si hace falta en UI nativa
+- [x] Proyecto Capacitor Android + widget 2×2 registrado en manifest
+- [x] Plugin para guardar `userId` + refresh del widget tras login
+- [x] Script `pnpm cap:sync` + `integrate-android-widget.mjs`
+- [ ] Build firmado y prueba en dispositivo real (Android Studio)
+- [ ] `WorkManager` para refresh más frecuente (opcional)
+- [ ] **iOS WidgetKit:** extensión Swift — fase 2
 
 **Nota:** el widget de home screen **no es lo mismo** que la página `/resumen` (esa es una vista web dentro de la PWA). El nativo lee la API sin cargar Next.js.
 

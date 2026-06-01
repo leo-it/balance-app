@@ -1,4 +1,4 @@
-# Buenas prácticas — Linkeweb
+# Buenas prácticas — Balance App
 
 Documento de referencia sobre **qué convenciones ya aplicamos** en el proyecto y **qué particularidades de Next.js 16** usamos. Complementa [`AGENTS.md`](../AGENTS.md) (reglas para agentes AI) y [`docs/TAREAS.md`](./TAREAS.md) (pendientes).
 

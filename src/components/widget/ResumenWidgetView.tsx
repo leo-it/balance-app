@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ChevronRight, Settings2, Wallet } from 'lucide-react'
 import type { BudgetState } from '@/types/budget'
 import type { Movement } from '@/types/movement'
+import { APP_NAME } from '@/lib/app-config'
 import {
   DEFAULT_WIDGET_METRICS,
   WIDGET_METRICS_STORAGE_KEY,
@@ -52,7 +53,7 @@ export function ResumenWidgetView({ budget, movements }: ResumenWidgetViewProps)
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
               <Wallet size={16} className="text-emerald-400" />
             </div>
-            <span className="font-semibold text-zinc-100">Linkeweb</span>
+            <span className="font-semibold text-zinc-100">{APP_NAME}</span>
           </div>
           <div className="flex items-center gap-1">
             <button

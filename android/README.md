@@ -1,6 +1,6 @@
 # Android — Widget nativo
 
-Linkeweb incluye un widget Android (2x2) que muestra métricas desde `GET /api/widget/summary`.
+Balance App incluye un widget Android (2x2) que muestra métricas desde `GET /api/widget/summary`.
 
 ## Requisitos
 
@@ -33,7 +33,7 @@ npx cap open android
 
 Opciones:
 
-1. **Dev:** cookie de sesión dev (`linkeweb_dev_session`) — el WebView debe haber iniciado sesión antes.
+1. **Dev:** cookie de sesión dev (`balance_app_dev_session`) — el WebView debe haber iniciado sesión antes.
 2. **Producción:** definir `WIDGET_API_KEY` en `.env` y pasarlo como `Authorization: Bearer <key>?userId=<clerkId>` desde el widget Kotlin.
 
 ## API

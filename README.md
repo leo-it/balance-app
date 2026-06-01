@@ -1,4 +1,4 @@
-# Linkeweb — PWA Gestor de Gastos Inteligente
+# Balance App — PWA Gestor de Gastos Inteligente
 
 PWA mobile-first para gestión de gastos y ahorros con automatizaciones via n8n, construida sobre Next.js 16 con arquitectura limpia y dark mode estricto.
 

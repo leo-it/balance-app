@@ -1,4 +1,4 @@
-# Tareas pendientes — Linkeweb
+# Tareas pendientes — Balance App
 
 Lista de mejoras para llevar la app a producción con calidad. Priorizá según impacto y esfuerzo.
 
@@ -168,7 +168,7 @@ Regla del proyecto: solo animar interacción directa del usuario (`AGENTS.md`). 
 
 **Tareas:**
 
-- [ ] Completar flujo Android: `cap add android`, copiar `widget-src`, registrar `LinkewebWidgetProvider` en `AndroidManifest.xml`
+- [ ] Completar flujo Android: `cap add android`, copiar `widget-src`, registrar `BalanceAppWidgetProvider` en `AndroidManifest.xml`
 - [ ] UI widget Android: disponible hoy, restante mes, ahorro ARS/USD, tap → abrir app en `/` o `/resumen`
 - [ ] Guardar en app `userId` + `WIDGET_API_KEY` en SharedPreferences (tras login Clerk) para refresh del widget
 - [ ] `WorkManager` o `AlarmManager` para actualizar widget cada N horas (y al abrir app)

@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next'
+import { APP_NAME, APP_TITLE } from '@/lib/app-config'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Linkeweb — Gestor de Gastos',
-    short_name: 'Linkeweb',
+    name: APP_TITLE,
+    short_name: APP_NAME,
     description: 'Gestor de gastos y ahorros inteligente',
     start_url: '/',
     display: 'standalone',

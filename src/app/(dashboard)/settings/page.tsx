@@ -1,3 +1,4 @@
+import { APP_NAME } from '@/lib/app-config'
 import { getCurrentUserInfo, getUserId } from '@/lib/auth'
 import { getBudgetForUser } from '@/lib/data'
 import { hasValidDatabase } from '@/lib/env'
@@ -140,7 +141,7 @@ export default async function SettingsPage() {
         </Section>
 
         <p className="px-1 text-center text-xs text-zinc-700">
-          Linkeweb v0.1.0 · Next.js 16.2 · React 19.2
+          {APP_NAME} v0.1.0 · Next.js 16.2 · React 19.2
         </p>
       </div>
     </div>

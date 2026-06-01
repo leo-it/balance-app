@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { LayoutGrid, Smartphone, Share } from 'lucide-react'
+import { APP_NAME } from '@/lib/app-config'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -54,7 +55,7 @@ export function InstallAppCard() {
   if (platform.isStandalone) {
     return (
       <div className="space-y-3 py-1">
-        <p className="text-sm text-emerald-400">Linkeweb ya está en tu pantalla de inicio.</p>
+        <p className="text-sm text-emerald-400">{APP_NAME} ya está en tu pantalla de inicio.</p>
         <p className="text-xs text-zinc-500">
           Mantené presionado el ícono → <strong className="text-zinc-400">Resumen rápido</strong>{' '}
           para ver disponible hoy sin abrir toda la app.
@@ -73,7 +74,7 @@ export function InstallAppCard() {
   return (
     <div className="space-y-4 py-1">
       <p className="text-sm text-zinc-400">
-        Instalá Linkeweb como app en Android. Es el MVP del &quot;widget&quot;: acceso directo desde
+        Instalá {APP_NAME} como app en Android. Es el MVP del &quot;widget&quot;: acceso directo desde
         el inicio y vista compacta en{' '}
         <Link href="/resumen" className="text-emerald-400 hover:underline">
           Resumen
@@ -113,7 +114,7 @@ export function InstallAppCard() {
 
       {!platform.isAndroid && !platform.isIos && !deferredPrompt && (
         <p className="text-sm text-zinc-500">
-          Abrí Linkeweb en Chrome en tu Android para instalar con un toque.
+          Abrí {APP_NAME} en Chrome en tu Android para instalar con un toque.
         </p>
       )}
 

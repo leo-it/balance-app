@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ---
 
-# Linkeweb — Pautas para agentes AI
+# Balance App — Pautas para agentes AI
 
 ## Contexto del proyecto
 

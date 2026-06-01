@@ -12,7 +12,7 @@ import org.json.JSONObject
 /**
  * Widget 2x2 — defaults: restante gastable, gastos del mes, ahorro USD.
  */
-class LinkewebWidgetProvider : AppWidgetProvider() {
+class BalanceAppWidgetProvider : AppWidgetProvider() {
 
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
     for (id in ids) {
@@ -21,8 +21,8 @@ class LinkewebWidgetProvider : AppWidgetProvider() {
   }
 
   private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
-    val views = RemoteViews(context.packageName, R.layout.widget_linkeweb)
-    val prefs = context.getSharedPreferences("linkeweb_widget", Context.MODE_PRIVATE)
+    val views = RemoteViews(context.packageName, R.layout.widget_balance_app)
+    val prefs = context.getSharedPreferences("balance_app_widget", Context.MODE_PRIVATE)
     val apiUrl = prefs.getString("api_url", "https://your-app.vercel.app/api/widget/summary")
     val apiKey = prefs.getString("api_key", "")
     val userId = prefs.getString("user_id", "dev-user")

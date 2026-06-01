@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Linkeweb"
+        android:text="Balance App"
         android:textColor="#a1a1aa"
         android:textSize="11sp" />
 

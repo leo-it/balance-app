@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import { APP_NAME } from '@/lib/app-config'
 import {
   BarChart3,
   LayoutDashboard,
@@ -27,5 +28,5 @@ export const NAV_ITEMS: NavItem[] = [
 
 export function navLabelForPath(pathname: string): string {
   const match = NAV_ITEMS.find((item) => item.href === pathname)
-  return match?.label ?? 'Linkeweb'
+  return match?.label ?? APP_NAME
 }

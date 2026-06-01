@@ -25,7 +25,9 @@ export const DEFAULT_WIDGET_METRICS: WidgetMetricId[] = [
   'savingsUsd',
 ]
 
-export const WIDGET_METRICS_STORAGE_KEY = 'linkeweb_widget_metrics'
+import { APP_STORAGE_PREFIX } from '@/lib/app-config'
+
+export const WIDGET_METRICS_STORAGE_KEY = `${APP_STORAGE_PREFIX}_widget_metrics`
 
 export function parseWidgetMetrics(raw: string | null): WidgetMetricId[] {
   if (!raw) return DEFAULT_WIDGET_METRICS

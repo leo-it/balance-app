@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from 'next'
+import { APP_NAME, APP_TITLE } from '@/lib/app-config'
 import { hasValidClerkKey } from '@/lib/auth'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Linkeweb — Gestor de Gastos',
+  title: APP_TITLE,
   description: 'Gestor de gastos y ahorros inteligente',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Linkeweb',
+    title: APP_NAME,
   },
 }
 

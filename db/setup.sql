@@ -1,4 +1,4 @@
--- Linkeweb — ejecutar TODO este archivo en el SQL Editor de tu base de datos (una sola vez)
+-- Balance App — ejecutar TODO este archivo en el SQL Editor de tu base de datos (una sola vez)
 
 -- ─── Tablas ───────────────────────────────────────────────────────────────
 

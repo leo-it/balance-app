@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { X, Smartphone } from 'lucide-react'
 
-const DISMISS_KEY = 'linkeweb_install_banner_dismissed'
+import { APP_NAME, APP_STORAGE_PREFIX } from '@/lib/app-config'
+
+const DISMISS_KEY = `${APP_STORAGE_PREFIX}_install_banner_dismissed`
 
 export function MobileInstallBanner() {
   const [visible, setVisible] = useState(false)
@@ -30,7 +32,7 @@ export function MobileInstallBanner() {
       <div className="flex items-start gap-3">
         <Smartphone size={18} className="mt-0.5 shrink-0 text-emerald-400" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-emerald-100">Instalá Linkeweb en tu celular</p>
+          <p className="text-sm font-medium text-emerald-100">Instalá {APP_NAME} en tu celular</p>
           <p className="mt-0.5 text-xs text-emerald-200/80">
             Acceso rápido desde el inicio y vista resumen tipo widget.
           </p>

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Wallet } from 'lucide-react'
+import { APP_NAME } from '@/lib/app-config'
 import { DevUserSignInButton } from '@/components/auth/DevUserSignInButton'
 import { ClerkSetupRequired } from '@/components/setup/ClerkSetupRequired'
 import { hasValidClerkKey } from '@/lib/auth'
@@ -14,7 +15,7 @@ export default function LoginPage() {
             <Wallet size={22} className="text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-50">Linkeweb</h1>
+            <h1 className="text-2xl font-bold text-zinc-50">{APP_NAME}</h1>
             <p className="mt-1 text-sm text-zinc-400">Gestor de gastos inteligente</p>
           </div>
         </div>

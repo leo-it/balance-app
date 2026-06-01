@@ -8,6 +8,7 @@ object WidgetConfigStore {
   private const val KEY_API_BASE = "api_base"
   private const val KEY_USER_ID = "user_id"
 
+  @JvmStatic
   fun save(context: Context, apiBase: String, userId: String) {
     context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
       .edit()
@@ -16,12 +17,14 @@ object WidgetConfigStore {
       .apply()
   }
 
+  @JvmStatic
   fun getApiUrl(context: Context): String {
     val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     val base = prefs.getString(KEY_API_BASE, null) ?: BuildConfig.WIDGET_API_BASE
     return "${base.trimEnd('/')}/api/widget/summary"
   }
 
+  @JvmStatic
   fun getUserId(context: Context): String? {
     return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_USER_ID, null)
   }

@@ -24,7 +24,7 @@ public class WidgetConfigPlugin extends Plugin {
     }
 
     WidgetConfigStore.save(getContext(), apiBase, userId);
-    BalanceAppWidgetProvider.refreshAll(getContext());
+    BalanceAppWidgetProvider.Companion.refreshAll(getContext());
     call.resolve();
   }
 }

@@ -34,3 +34,12 @@ export async function isDualCurrencySchemaReady(): Promise<boolean> {
   if (isMissingTableError(error.message)) return false
   throw new Error(error.message)
 }
+
+export async function isRemindersSchemaReady(): Promise<boolean> {
+  const db = createDbClient()
+  const { error } = await db.from('reminders').select('id').limit(1)
+
+  if (!error) return true
+  if (isMissingTableError(error.message)) return false
+  throw new Error(error.message)
+}

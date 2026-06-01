@@ -4,6 +4,7 @@ import { useActionState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { X } from 'lucide-react'
 import { updateFixedExpense } from '@/actions/expense.actions'
+import { ReminderFields } from '@/components/reminders/ReminderFields'
 import type { FormActionState } from '@/types/form-action'
 import type { FixedExpense } from '@/types/expense'
 
@@ -121,6 +122,8 @@ export function EditFixedExpenseSheet({ expense, onClose }: EditFixedExpenseShee
               ))}
             </select>
           </div>
+
+          <ReminderFields initial={expense.reminder} />
 
           <motion.button
             type="submit"

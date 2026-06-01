@@ -12,6 +12,9 @@ import {
   syncBudgetSnapshot,
   updateMovementRow,
 } from '@/lib/db'
+import { deleteReminderForEntity, syncReminderForEntity } from '@/lib/db/reminders'
+import { formatMovementAmount } from '@/lib/formatters'
+import { isReminderFormEnabled, parseReminderForm } from '@/lib/reminder-form'
 import { sendToN8n } from '@/lib/n8n'
 import type { FormActionState } from '@/types/form-action'
 import type { MovementCurrency, MovementType, SavingsTarget } from '@/types/movement'
@@ -101,6 +104,11 @@ export async function addMovement(
     const metaError = validateMovementMeta(currency, savingsTarget, cryptoSymbol)
     if (metaError) return { error: metaError }
 
+    const reminderInput = parseReminderForm(formData)
+    if ('error' in reminderInput && reminderInput.error) {
+      return { error: reminderInput.error }
+    }
+
     const createdAt = new Date().toISOString()
     const movement = {
       user_id: userId,
@@ -115,7 +123,7 @@ export async function addMovement(
       created_at: createdAt,
     }
 
-    await insertMovementRow(userId, {
+    const movementId = await insertMovementRow(userId, {
       description,
       amount,
       type,
@@ -126,6 +134,26 @@ export async function addMovement(
       savingsTarget,
       createdAt,
     })
+
+    if (isReminderFormEnabled(reminderInput)) {
+      await syncReminderForEntity(
+        userId,
+        'movement',
+        movementId,
+        description,
+        `Recordatorio: ${description} — ${formatMovementAmount(amount, currency, cryptoSymbol, savingsTarget)}`,
+        reminderInput,
+      )
+    } else {
+      await syncReminderForEntity(
+        userId,
+        'movement',
+        movementId,
+        description,
+        `Recordatorio: ${description} — ${formatMovementAmount(amount, currency, cryptoSymbol, savingsTarget)}`,
+        { enabled: false },
+      )
+    }
 
     await Promise.all([
       sendToN8n({ userId, action: 'add_movement', payload: movement }),
@@ -159,6 +187,8 @@ export async function deleteMovement(movementId: string): Promise<void> {
     .eq('user_id', userId)
 
   if (error) throw new Error(error.message)
+
+  await deleteReminderForEntity(userId, 'movement', movementId)
 
   await Promise.all([
     sendToN8n({ userId, action: 'delete_movement', payload: { movementId } }),
@@ -202,6 +232,11 @@ export async function updateMovement(
     const metaError = validateMovementMeta(currency, savingsTarget, cryptoSymbol)
     if (metaError) return { error: metaError }
 
+    const reminderInput = parseReminderForm(formData)
+    if ('error' in reminderInput && reminderInput.error) {
+      return { error: reminderInput.error }
+    }
+
     const existing = await fetchMovementRow(userId, movementId)
     const oldTarget = (existing.savings_target ?? 'none') as SavingsTarget
     const oldAmount = Number(existing.amount ?? 0)
@@ -217,6 +252,26 @@ export async function updateMovement(
       cryptoSymbol,
       savingsTarget,
     })
+
+    if (isReminderFormEnabled(reminderInput)) {
+      await syncReminderForEntity(
+        userId,
+        'movement',
+        movementId,
+        description,
+        `Recordatorio: ${description} — ${formatMovementAmount(amount, currency, cryptoSymbol, savingsTarget)}`,
+        reminderInput,
+      )
+    } else {
+      await syncReminderForEntity(
+        userId,
+        'movement',
+        movementId,
+        description,
+        `Recordatorio: ${description} — ${formatMovementAmount(amount, currency, cryptoSymbol, savingsTarget)}`,
+        { enabled: false },
+      )
+    }
 
     await Promise.all([
       sendToN8n({

@@ -4,7 +4,7 @@ import { useTransition } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import {
   Home, Wifi, Shield, Dumbbell, Music, Tv, Car, Zap,
-  Receipt, CheckCircle2, Undo2, Loader2, Pencil, Trash2,
+  Receipt, CheckCircle2, Undo2, Loader2, Pencil, Trash2, Bell,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/formatters'
@@ -64,11 +64,14 @@ export function FixedExpenseCard({ expense, onPay, onUndo, onEdit, onDelete }: F
       <div className="flex min-w-0 flex-1 flex-col">
         <span
           className={cn(
-            'text-sm font-medium leading-tight',
+            'flex items-center gap-1.5 text-sm font-medium leading-tight',
             isPaid ? 'text-zinc-400 line-through' : 'text-zinc-100',
           )}
         >
           {expense.label}
+          {expense.reminder && (
+            <Bell size={12} className="shrink-0 text-amber-400" aria-label="Con recordatorio" />
+          )}
         </span>
         <span className="text-xs text-zinc-500">{formatCurrency(expense.amount)}</span>
       </div>

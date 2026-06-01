@@ -1,5 +1,6 @@
 import { createDbClient } from './client'
 import { isMissingColumnError, isMissingTableError } from './health'
+import { getRemindersByEntityIds } from './reminders'
 import {
   computeMonthlySummary,
   type MonthlySummary as DomainMonthlySummary,
@@ -147,7 +148,18 @@ export async function getFixedExpenses(userId: string): Promise<FixedExpense[]> 
 
   if (error) throw new Error(error.message)
   if (!data) return []
-  return (data as ExpenseRow[]).map(toFixedExpense)
+
+  const rows = data as ExpenseRow[]
+  const reminderMap = await getRemindersByEntityIds(
+    userId,
+    'fixed_expense',
+    rows.map((row) => row.id),
+  )
+
+  return rows.map((row) => ({
+    ...toFixedExpense(row),
+    reminder: reminderMap.get(row.id) ?? null,
+  }))
 }
 
 export async function getAllMovements(userId: string): Promise<Movement[]> {
@@ -160,7 +172,18 @@ export async function getAllMovements(userId: string): Promise<Movement[]> {
 
   if (error) throw new Error(error.message)
   if (!data) return []
-  return (data as MovementRow[]).map(toMovement)
+
+  const rows = data as MovementRow[]
+  const reminderMap = await getRemindersByEntityIds(
+    userId,
+    'movement',
+    rows.map((row) => row.id),
+  )
+
+  return rows.map((row) => ({
+    ...toMovement(row),
+    reminder: reminderMap.get(row.id) ?? null,
+  }))
 }
 
 export async function getRecentMovements(userId: string, limit = 20): Promise<Movement[]> {
@@ -573,7 +596,7 @@ function movementRowPayload(input: MovementWriteInput): Record<string, unknown> 
 export async function insertMovementRow(
   userId: string,
   input: MovementWriteInput & { createdAt: string },
-): Promise<void> {
+): Promise<string> {
   const db = createDbClient()
   const fullRow = {
     user_id: userId,
@@ -581,10 +604,10 @@ export async function insertMovementRow(
     created_at: input.createdAt,
   }
 
-  let { error } = await db.from('movements').insert(fullRow)
+  let result = await db.from('movements').insert(fullRow).select('id').single()
 
-  if (error && isMissingColumnError(error.message)) {
-    ;({ error } = await db.from('movements').insert({
+  if (result.error && isMissingColumnError(result.error.message)) {
+    result = await db.from('movements').insert({
       user_id: userId,
       description: input.description,
       amount: input.amount,
@@ -592,10 +615,12 @@ export async function insertMovementRow(
       category: input.category,
       icon_name: input.iconName,
       created_at: input.createdAt,
-    }))
+    }).select('id').single()
   }
 
-  if (error) throw new Error(error.message)
+  if (result.error) throw new Error(result.error.message)
+  if (!result.data?.id) throw new Error('No se pudo crear el movimiento')
+  return result.data.id as string
 }
 
 export async function updateMovementRow(

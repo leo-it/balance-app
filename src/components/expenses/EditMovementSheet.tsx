@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { X } from 'lucide-react'
 import { updateMovement } from '@/actions/movement.actions'
 import { MovementExtraFields } from './MovementExtraFields'
+import { ReminderFields } from '@/components/reminders/ReminderFields'
 import type { FormActionState } from '@/types/form-action'
 import type { Movement, MovementCurrency, SavingsTarget } from '@/types/movement'
 import { movementAmountStep } from '@/lib/amount-input'
@@ -163,6 +164,8 @@ export function EditMovementSheet({ movement, onClose }: EditMovementSheetProps)
               ))}
             </select>
           </div>
+
+          <ReminderFields initial={movement.reminder} />
 
           <motion.button
             type="submit"

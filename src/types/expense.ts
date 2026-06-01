@@ -1,3 +1,5 @@
+import type { EntityReminder } from '@/types/reminder'
+
 export type ExpenseStatus = 'pending' | 'paid'
 
 export interface FixedExpense {
@@ -7,4 +9,5 @@ export interface FixedExpense {
   iconName: string
   status: ExpenseStatus
   paidAt?: string
+  reminder?: EntityReminder | null
 }

@@ -4,6 +4,9 @@ import { revalidatePath } from 'next/cache'
 import { getUserId } from '@/lib/auth'
 import { assertDatabase } from '@/lib/env'
 import { createDbClient, syncBudgetSnapshot } from '@/lib/db'
+import { deleteReminderForEntity, syncReminderForEntity } from '@/lib/db/reminders'
+import { formatCurrency } from '@/lib/formatters'
+import { isReminderFormEnabled, parseReminderForm } from '@/lib/reminder-form'
 import { sendToN8n } from '@/lib/n8n'
 import type { FormActionState } from '@/types/form-action'
 
@@ -28,16 +31,45 @@ export async function addFixedExpense(
     if (!label) return { error: 'Ingresá un nombre para el gasto' }
     if (amount === null) return { error: 'Ingresá un monto válido mayor a 0' }
 
+    const reminderInput = parseReminderForm(formData)
+    if ('error' in reminderInput && reminderInput.error) {
+      return { error: reminderInput.error }
+    }
+
     const db = createDbClient()
-    const { error } = await db.from('fixed_expenses').insert({
-      user_id: userId,
-      label,
-      amount,
-      icon_name: iconName,
-      status: 'pending',
-    })
+    const { data, error } = await db
+      .from('fixed_expenses')
+      .insert({
+        user_id: userId,
+        label,
+        amount,
+        icon_name: iconName,
+        status: 'pending',
+      })
+      .select('id')
+      .single()
 
     if (error) return { error: error.message }
+
+    if (isReminderFormEnabled(reminderInput)) {
+      await syncReminderForEntity(
+        userId,
+        'fixed_expense',
+        data.id,
+        label,
+        `Recordatorio: ${label} — ${formatCurrency(amount)}`,
+        reminderInput,
+      )
+    } else {
+      await syncReminderForEntity(
+        userId,
+        'fixed_expense',
+        data.id,
+        label,
+        `Recordatorio: ${label} — ${formatCurrency(amount)}`,
+        { enabled: false },
+      )
+    }
 
     await sendToN8n({
       userId,
@@ -139,6 +171,8 @@ export async function deleteFixedExpense(expenseId: string): Promise<void> {
 
   if (error) throw new Error(error.message)
 
+  await deleteReminderForEntity(userId, 'fixed_expense', expenseId)
+
   await Promise.all([
     sendToN8n({ userId, action: 'delete_fixed_expense', payload: { expenseId } }),
     data?.status === 'paid' ? syncBudgetSnapshot(userId) : Promise.resolve(),
@@ -165,6 +199,11 @@ export async function updateFixedExpense(
     if (!label) return { error: 'Ingresá un nombre para el gasto' }
     if (amount === null) return { error: 'Ingresá un monto válido mayor a 0' }
 
+    const reminderInput = parseReminderForm(formData)
+    if ('error' in reminderInput && reminderInput.error) {
+      return { error: reminderInput.error }
+    }
+
     const db = createDbClient()
     const { data: existing, error: fetchError } = await db
       .from('fixed_expenses')
@@ -182,6 +221,26 @@ export async function updateFixedExpense(
       .eq('user_id', userId)
 
     if (error) return { error: error.message }
+
+    if (isReminderFormEnabled(reminderInput)) {
+      await syncReminderForEntity(
+        userId,
+        'fixed_expense',
+        expenseId,
+        label,
+        `Recordatorio: ${label} — ${formatCurrency(amount)}`,
+        reminderInput,
+      )
+    } else {
+      await syncReminderForEntity(
+        userId,
+        'fixed_expense',
+        expenseId,
+        label,
+        `Recordatorio: ${label} — ${formatCurrency(amount)}`,
+        { enabled: false },
+      )
+    }
 
     await Promise.all([
       sendToN8n({

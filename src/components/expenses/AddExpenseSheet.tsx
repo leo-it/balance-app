@@ -6,6 +6,7 @@ import { X } from 'lucide-react'
 import { addFixedExpense } from '@/actions/expense.actions'
 import { addMovement } from '@/actions/movement.actions'
 import { MovementExtraFields } from './MovementExtraFields'
+import { ReminderFields } from '@/components/reminders/ReminderFields'
 import type { FormActionState } from '@/types/form-action'
 import type { MovementCurrency, SavingsTarget } from '@/types/movement'
 import { movementAmountStep } from '@/lib/amount-input'
@@ -139,6 +140,8 @@ export function AddExpenseSheet({ onClose }: AddExpenseSheetProps) {
             <SelectField label="Categoría" name="category" options={CATEGORIES} />
             <SelectField label="Ícono" name="iconName" options={MOVEMENT_ICONS} />
 
+            <ReminderFields />
+
             <SubmitButton pending={pending} label="Guardar movimiento" />
           </form>
         ) : (
@@ -158,6 +161,7 @@ export function AddExpenseSheet({ onClose }: AddExpenseSheetProps) {
             <p className="text-xs text-zinc-500">
               Compromiso que se repite cada mes. Solo resta del presupuesto al marcarlo pagado.
             </p>
+            <ReminderFields />
             <SubmitButton pending={pending} label="Guardar gasto fijo" />
           </form>
         )}

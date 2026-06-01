@@ -53,12 +53,16 @@ export async function GET(request: Request) {
     }
 
     const pendingFixedCount = expenses.filter((e) => e.status === 'pending').length
+    const totalSpent = summary.fixedPaidTotal + summary.variableExpensesTotal
 
     return NextResponse.json({
       dailyAvailable: summary.dailyAvailable,
+      spendableRemaining: summary.spendableRemaining,
       monthRemaining: summary.monthRemaining,
+      totalSpent,
       savingsArs: budget.savings.arsCurrent,
       savingsUsd: budget.savings.usdCurrent,
+      savingsEur: budget.savings.eurCurrent,
       pendingFixedCount,
       updatedAt: new Date().toISOString(),
     })

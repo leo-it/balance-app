@@ -46,13 +46,19 @@ Authorization: Bearer <WIDGET_API_KEY>   # opcional en prod
 Response:
 {
   "dailyAvailable": 4200,
+  "spendableRemaining": 3800,
   "monthRemaining": 85000,
+  "totalSpent": 18000,
   "savingsArs": 87500,
   "savingsUsd": 1200,
+  "savingsEur": 0,
   "pendingFixedCount": 3,
   "updatedAt": "2026-05-30T..."
 }
 ```
+
+Widget nativo (por defecto): restante gastable, gastos del mes, ahorro USD.
+Vista PWA `/resumen`: mismos defaults + personalizable con ⚙ en el celular.
 
 ## Build APK (internal testing)
 

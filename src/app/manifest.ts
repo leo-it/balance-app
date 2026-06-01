@@ -24,5 +24,14 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'maskable',
       },
     ],
+    shortcuts: [
+      {
+        name: 'Resumen rápido',
+        short_name: 'Resumen',
+        description: 'Disponible hoy y ahorros',
+        url: '/resumen',
+        icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+      },
+    ],
   }
 }

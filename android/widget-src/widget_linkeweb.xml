@@ -14,29 +14,37 @@
         android:textSize="11sp" />
 
     <TextView
-        android:id="@+id/widget_daily"
+        android:id="@+id/widget_spendable"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="6dp"
         android:text="—"
-        android:textColor="#fafafa"
-        android:textSize="20sp"
+        android:textColor="#34d399"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text="Disponible hoy"
+        android:text="Restante gastable"
         android:textColor="#71717a"
         android:textSize="10sp" />
 
     <TextView
-        android:id="@+id/widget_remaining"
+        android:id="@+id/widget_spent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="—"
-        android:textColor="#10b981"
-        android:textSize="11sp" />
+        android:textColor="#f87171"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_savings_usd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="—"
+        android:textColor="#38bdf8"
+        android:textSize="12sp" />
 </LinearLayout>

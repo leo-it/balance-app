@@ -70,8 +70,8 @@ Lista de mejoras para llevar la app a producción con calidad. Priorizá según 
 
 - [ ] Verificar Serwist en producción (deshabilitado en dev ✓)
 - [ ] Estrategia offline clara: qué funciona sin red y qué muestra error
-- [ ] `manifest.json`: nombre, colores, iconos maskable
-- [ ] Prompt de instalación (A2HS) en mobile
+- [ ] `manifest.json`: nombre, colores, iconos maskable (parcial ✓)
+- [x] Prompt de instalación (A2HS) en mobile — banner + `/instalar` + atajo PWA a `/resumen` ✓
 
 ---
 

@@ -10,8 +10,7 @@ import java.net.URL
 import org.json.JSONObject
 
 /**
- * Widget 2x2 — requiere WIDGET_API_KEY y WIDGET_API_URL en BuildConfig o SharedPreferences.
- * Copiar a android/app/src/main/java/... tras `npx cap add android`.
+ * Widget 2x2 — defaults: restante gastable, gastos del mes, ahorro USD.
  */
 class LinkewebWidgetProvider : AppWidgetProvider() {
 
@@ -35,14 +34,33 @@ class LinkewebWidgetProvider : AppWidgetProvider() {
         if (apiKey.isNotEmpty()) conn.setRequestProperty("Authorization", "Bearer $apiKey")
         val body = conn.inputStream.bufferedReader().readText()
         val json = JSONObject(body)
-        views.setTextViewText(R.id.widget_daily, "$${json.getInt("dailyAvailable")}")
-        views.setTextViewText(R.id.widget_remaining, "Restante: $${json.getInt("monthRemaining")}")
+        views.setTextViewText(
+          R.id.widget_spendable,
+          formatArs(json.optDouble("spendableRemaining", 0.0)),
+        )
+        views.setTextViewText(
+          R.id.widget_spent,
+          "Gastos: ${formatArs(json.optDouble("totalSpent", 0.0))}",
+        )
+        views.setTextViewText(
+          R.id.widget_savings_usd,
+          "Ahorro USD: US$${formatUsd(json.optDouble("savingsUsd", 0.0))}",
+        )
         manager.updateAppWidget(id, views)
       } catch (_: Exception) {
-        views.setTextViewText(R.id.widget_daily, "—")
-        views.setTextViewText(R.id.widget_remaining, "Sin conexión")
+        views.setTextViewText(R.id.widget_spendable, "—")
+        views.setTextViewText(R.id.widget_spent, "Sin conexión")
+        views.setTextViewText(R.id.widget_savings_usd, "")
         manager.updateAppWidget(id, views)
       }
     }.start()
+  }
+
+  private fun formatArs(value: Double): String {
+    return "$${"%,.0f".format(value)}"
+  }
+
+  private fun formatUsd(value: Double): String {
+    return "%,.2f".format(value)
   }
 }

@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Settings,
   ShoppingCart,
+  Smartphone,
   TrendingUp,
   Wallet,
 } from 'lucide-react'
@@ -21,6 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/analytics', label: 'Análisis', icon: BarChart3 },
   { href: '/savings', label: 'Ahorros', icon: TrendingUp },
   { href: '/settings', label: 'Ajustes', icon: Settings },
+  { href: '/instalar', label: 'Instalar', icon: Smartphone },
 ]
 
 export function navLabelForPath(pathname: string): string {

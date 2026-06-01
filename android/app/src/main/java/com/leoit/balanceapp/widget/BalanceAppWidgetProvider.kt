@@ -27,7 +27,6 @@ class BalanceAppWidgetProvider : AppWidgetProvider() {
   }
 
   companion object {
-    @JvmStatic
     fun refreshAll(context: Context) {
       val manager = AppWidgetManager.getInstance(context)
       val component = ComponentName(context, BalanceAppWidgetProvider::class.java)

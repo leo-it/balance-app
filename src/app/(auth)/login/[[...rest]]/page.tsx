@@ -23,11 +23,10 @@ export default function LoginPage() {
         {hasValidClerkKey ? (
           <ClerkSignIn />
         ) : (
-          <>
-            <ClerkSetupRequired />
-            {isDevAuthAllowed() && <DevUserSignInButton />}
-          </>
+          <ClerkSetupRequired />
         )}
+
+        {isDevAuthAllowed() && <DevUserSignInButton />}
 
         <p className="mt-6 text-center text-sm text-zinc-500">
           ¿No tenés cuenta?{' '}

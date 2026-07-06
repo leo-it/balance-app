@@ -1,7 +1,7 @@
 export { createDbClient } from './client'
 export { createServerDbClient } from './server'
 export { createBrowserDbClient } from './browser'
-export { isDatabaseReady, isDualCurrencySchemaReady, isRemindersSchemaReady, isMissingColumnError, isMissingTableError } from './health'
+export { isDatabaseReady, isDatabaseReachable, isDualCurrencySchemaReady, isRemindersSchemaReady, isMissingColumnError, isMissingTableError, isConnectionError } from './health'
 export {
   getBudgetState,
   getFixedExpenses,

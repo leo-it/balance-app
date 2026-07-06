@@ -28,6 +28,8 @@ function movement(partial: Partial<Movement> & Pick<Movement, 'amount' | 'type'>
     iconName: 'Receipt',
     currency: 'ARS',
     savingsTarget: 'none',
+    status: 'paid',
+    paidAt: '2026-05-10T10:00:00Z',
     createdAt: '2026-05-10T10:00:00Z',
     ...partial,
   }
@@ -96,6 +98,23 @@ describe('computeMonthlySummary', () => {
     expect(summary.monthRemaining).toBe(100_000)
     expect(summary.spendableRemaining).toBe(90_000)
     expect(summary.dailyAvailable).toBe(90_000 / ctx.daysRemaining)
+  })
+
+  it('no cuenta movimientos pendientes en gastos ni ingresos', () => {
+    const summary = computeMonthlySummary({
+      monthlyBudget: 100_000,
+      fixedExpenses: [],
+      movements: [
+        movement({ amount: 5_000, type: 'expense', status: 'pending' }),
+        movement({ amount: 20_000, type: 'income', status: 'pending' }),
+      ],
+      now: NOW,
+    })
+
+    expect(summary.variableExpensesTotal).toBe(0)
+    expect(summary.incomeTotal).toBe(0)
+    expect(summary.totalSpent).toBe(0)
+    expect(summary.monthRemaining).toBe(100_000)
   })
 
   it('no cuenta fijos pagados en otro mes', () => {

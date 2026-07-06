@@ -7,7 +7,13 @@ import {
 } from '@/lib/domain/budget'
 import type { BudgetState, CryptoSavingsBalances, DeviationStatus, SavingsJars } from '@/types/budget'
 import type { FixedExpense, ExpenseStatus } from '@/types/expense'
-import type { Movement, MovementCurrency, MovementType, SavingsTarget } from '@/types/movement'
+import type {
+  Movement,
+  MovementCurrency,
+  MovementStatus,
+  MovementType,
+  SavingsTarget,
+} from '@/types/movement'
 
 interface BudgetRow {
   id: string
@@ -60,6 +66,8 @@ interface MovementRow {
   currency?: MovementCurrency
   crypto_symbol?: string | null
   savings_target?: SavingsTarget
+  status?: MovementStatus
+  paid_at?: string | null
   created_at: string
 }
 
@@ -119,6 +127,8 @@ function toMovement(row: MovementRow): Movement {
     currency,
     savingsTarget,
     ...(cryptoSymbol ? { cryptoSymbol } : {}),
+    status: row.status ?? 'paid',
+    ...(row.paid_at ? { paidAt: row.paid_at } : {}),
     createdAt: row.created_at,
   }
 }
@@ -261,7 +271,7 @@ export async function syncBudgetSnapshot(userId: string): Promise<void> {
 
 export async function getAllExpenseMovements(userId: string): Promise<Movement[]> {
   const movements = await getAllMovements(userId)
-  return movements.filter((m) => m.type === 'expense')
+  return movements.filter((m) => m.type === 'expense' && m.status === 'paid')
 }
 
 export interface CategorySpend {
@@ -358,8 +368,8 @@ export async function getSavingsContributionsByMonth(
   const byMonth = new Map<string, { ars: number; usd: number; eur: number; crypto: CryptoSavingsBalances }>()
 
   for (const m of movements) {
-    if (m.savingsTarget === 'none') continue
-    const date = new Date(m.createdAt)
+    if (m.savingsTarget === 'none' || m.status !== 'paid' || !m.paidAt) continue
+    const date = new Date(m.paidAt)
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     const entry = byMonth.get(key) ?? { ars: 0, usd: 0, eur: 0, crypto: {} }
     if (m.savingsTarget === 'ars') entry.ars += m.amount
@@ -601,6 +611,7 @@ export async function insertMovementRow(
   const fullRow = {
     user_id: userId,
     ...movementRowPayload(input),
+    status: 'pending',
     created_at: input.createdAt,
   }
 

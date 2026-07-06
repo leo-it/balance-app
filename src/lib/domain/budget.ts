@@ -84,7 +84,13 @@ export function sumMovementsByType(
   ctx: MonthContext,
 ): number {
   return movements
-    .filter((m) => m.type === type && isInMonth(m.createdAt, ctx))
+    .filter(
+      (m) =>
+        m.type === type &&
+        m.status === 'paid' &&
+        m.paidAt &&
+        isInMonth(m.paidAt, ctx),
+    )
     .reduce((sum, m) => sum + m.amount, 0)
 }
 
@@ -93,7 +99,9 @@ export function sumBudgetIncome(movements: Movement[], ctx: MonthContext): numbe
     .filter(
       (m) =>
         m.type === 'income' &&
-        isInMonth(m.createdAt, ctx) &&
+        m.status === 'paid' &&
+        m.paidAt &&
+        isInMonth(m.paidAt, ctx) &&
         m.savingsTarget === 'none' &&
         m.currency === 'ARS',
     )
@@ -105,9 +113,17 @@ export function sumBudgetVariableExpenses(movements: Movement[], ctx: MonthConte
     .filter(
       (m) =>
         m.type === 'expense' &&
-        isInMonth(m.createdAt, ctx) &&
+        m.status === 'paid' &&
+        m.paidAt &&
+        isInMonth(m.paidAt, ctx) &&
         m.currency === 'ARS',
     )
+    .reduce((sum, m) => sum + m.amount, 0)
+}
+
+export function sumMovementsPending(movements: Movement[]): number {
+  return movements
+    .filter((m) => m.type === 'expense' && m.status === 'pending' && m.currency === 'ARS')
     .reduce((sum, m) => sum + m.amount, 0)
 }
 
@@ -121,7 +137,9 @@ export function sumSavingsContributionsThisMonth(
   const crypto: Record<string, number> = {}
 
   for (const m of movements) {
-    if (m.type !== 'income' || !isInMonth(m.createdAt, ctx)) continue
+    if (m.type !== 'income' || m.status !== 'paid' || !m.paidAt || !isInMonth(m.paidAt, ctx)) {
+      continue
+    }
     if (m.savingsTarget === 'ars') ars += m.amount
     if (m.savingsTarget === 'usd') usd += m.amount
     if (m.savingsTarget === 'eur') eur += m.amount
@@ -140,7 +158,7 @@ export function computeCryptoSavingsBalanceFromMovements(
   const crypto: Record<string, number> = {}
 
   for (const m of movements) {
-    if (m.type !== 'income' || m.savingsTarget !== 'crypto') continue
+    if (m.type !== 'income' || m.status !== 'paid' || m.savingsTarget !== 'crypto') continue
     const symbol = (m.cryptoSymbol ?? 'CRIPTO').toUpperCase()
     crypto[symbol] = (crypto[symbol] ?? 0) + m.amount
   }
@@ -177,13 +195,14 @@ export function computeMonthlySummary(input: MonthlySummaryInput): MonthlySummar
   const fixedPaidTotal = sumFixedPaidThisMonth(input.fixedExpenses, ctx)
   const fixedPendingTotal = sumFixedPending(input.fixedExpenses)
   const variableExpensesTotal = sumBudgetVariableExpenses(input.movements, ctx)
+  const movementsPendingTotal = sumMovementsPending(input.movements)
   const incomeTotal = sumBudgetIncome(input.movements, ctx)
   const { ars: savingsContributionsArs, usd: savingsContributionsUsd, eur: savingsContributionsEur, crypto: savingsContributionsCrypto } =
     sumSavingsContributionsThisMonth(input.movements, ctx)
   const totalSpent = fixedPaidTotal + variableExpensesTotal
   const monthRemaining =
     input.monthlyBudget - fixedPaidTotal - variableExpensesTotal + incomeTotal
-  const spendableRemaining = monthRemaining - fixedPendingTotal
+  const spendableRemaining = monthRemaining - fixedPendingTotal - movementsPendingTotal
   const dailyAvailable = Math.max(0, spendableRemaining) / ctx.daysRemaining
   const deviationStatus = computeDeviationStatus(input.monthlyBudget, totalSpent, ctx)
 

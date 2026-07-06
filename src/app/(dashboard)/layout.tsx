@@ -1,10 +1,11 @@
 import { getCurrentUserInfo, getUserId, hasDevSession } from '@/lib/auth'
-import { getScheduledReminders, isDualCurrencySchemaReady } from '@/lib/db'
+import { getScheduledReminders, isDatabaseReachable, isDualCurrencySchemaReady } from '@/lib/db'
 import { AddExpenseFab } from '@/components/expenses/AddExpenseFab'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { DesktopHeader } from '@/components/layout/DesktopHeader'
 import { MobileTopBar } from '@/components/layout/MobileTopBar'
 import { MobileInstallBanner } from '@/components/install/MobileInstallBanner'
+import { DatabaseConnectionRequired } from '@/components/setup/DatabaseConnectionRequired'
 import { SchemaMigrationBanner } from '@/components/setup/SchemaMigrationBanner'
 import { WidgetNativeSync } from '@/components/widget/WidgetNativeSync'
 import { ReminderNativeSync } from '@/components/reminders/ReminderNativeSync'
@@ -17,12 +18,23 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const userId = await getUserId()
-  const [user, schemaReady, isDevAuth, reminders] = await Promise.all([
+  const [user, dbReachable, schemaReady, isDevAuth, reminders] = await Promise.all([
     getCurrentUserInfo(),
+    isDatabaseReachable(),
     isDualCurrencySchemaReady(),
     hasDevSession(),
     getScheduledReminders(userId),
   ])
+
+  if (!dbReachable) {
+    return (
+      <div className="flex min-h-dvh bg-zinc-950">
+        <main className="flex flex-1 items-center justify-center px-4 py-8">
+          <DatabaseConnectionRequired />
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-dvh bg-zinc-950">

@@ -47,11 +47,14 @@ CREATE TABLE IF NOT EXISTS movements (
   currency    text NOT NULL DEFAULT 'ARS' CHECK (currency IN ('ARS', 'USD', 'EUR', 'CRYPTO')),
   crypto_symbol text,
   savings_target text NOT NULL DEFAULT 'none' CHECK (savings_target IN ('none', 'ars', 'usd', 'eur', 'crypto')),
+  status      text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid')),
+  paid_at     timestamptz,
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS movements_user_id_idx ON movements(user_id);
 CREATE INDEX IF NOT EXISTS movements_created_at_idx ON movements(created_at DESC);
+CREATE INDEX IF NOT EXISTS movements_user_status_idx ON movements(user_id, status);
 
 CREATE TABLE IF NOT EXISTS shopping_list_items (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),

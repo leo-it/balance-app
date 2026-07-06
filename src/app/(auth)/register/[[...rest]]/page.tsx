@@ -55,11 +55,10 @@ export default function RegisterPage() {
         {hasValidClerkKey ? (
           <ClerkSignUp />
         ) : (
-          <>
-            <ClerkSetupRequired />
-            {isDevAuthAllowed() && <DevUserSignInButton />}
-          </>
+          <ClerkSetupRequired />
         )}
+
+        {isDevAuthAllowed() && <DevUserSignInButton />}
 
         <p className="mt-6 text-center text-sm text-zinc-500">
           ¿Ya tenés cuenta?{' '}

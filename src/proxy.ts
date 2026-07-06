@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse, type NextRequest } from 'next/server'
 import { hasValidClerkKey, isAuthDevBypass } from '@/lib/auth'
-import { DEV_SESSION_COOKIE, hasDevSessionCookie } from '@/lib/dev-session'
+import { DEV_SESSION_COOKIE, hasDevSessionCookie, isDevAuthAllowed } from '@/lib/dev-session'
 
 const isPublicRoute = createRouteMatcher([
   '/login(.*)',
@@ -21,6 +21,12 @@ function redirectToLogin(request: NextRequest): NextResponse {
 export const proxy = hasValidClerkKey
   ? clerkMiddleware(async (auth, request) => {
       if (!isPublicRoute(request)) {
+        if (
+          isDevAuthAllowed() &&
+          hasDevSessionCookie(request.cookies.get(DEV_SESSION_COOKIE)?.value)
+        ) {
+          return NextResponse.next()
+        }
         await auth.protect()
       }
       return NextResponse.next()

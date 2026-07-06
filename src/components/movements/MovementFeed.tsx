@@ -21,9 +21,14 @@ export function MovementFeed({ movements }: MovementFeedProps) {
 
   return (
     <section className="space-y-1">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 pb-1">
-        Movimientos recientes
-      </h2>
+      <div className="pb-1">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          Movimientos recientes
+        </h2>
+        <p className="mt-1 text-xs text-zinc-600">
+          Registrá gastos e ingresos y marcálos como pagados o cobrados cuando se concreten.
+        </p>
+      </div>
 
       <MovementList movements={movements} />
     </section>

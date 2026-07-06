@@ -3,13 +3,22 @@ import { getDashboardData } from '@/lib/data'
 import { MetricsHeader } from '@/components/metrics/MetricsHeader'
 import { FixedExpenseList } from '@/components/expenses/FixedExpenseList'
 import { MovementFeed } from '@/components/movements/MovementFeed'
+import { DatabaseConnectionRequired } from '@/components/setup/DatabaseConnectionRequired'
 import { DatabaseSetupRequired } from '@/components/setup/DatabaseSetupRequired'
 
 export default async function DashboardPage() {
   const userId = await getUserId()
   const data = await getDashboardData(userId)
 
-  if (!data) {
+  if (data.status === 'unreachable') {
+    return (
+      <div className="px-4 py-5 lg:px-8 lg:py-6">
+        <DatabaseConnectionRequired />
+      </div>
+    )
+  }
+
+  if (data.status === 'missing_tables') {
     return (
       <div className="px-4 py-5 lg:px-8 lg:py-6">
         <DatabaseSetupRequired />

@@ -5,18 +5,22 @@ import type { Movement } from '@/types/movement'
 
 export { hasValidDatabase } from '@/lib/env'
 
-interface DashboardData {
-  budget: BudgetState
-  expenses: FixedExpense[]
-  movements: Movement[]
-}
+export type DashboardLoadState =
+  | { status: 'ok'; budget: BudgetState; expenses: FixedExpense[]; movements: Movement[] }
+  | { status: 'missing_tables' }
+  | { status: 'unreachable' }
 
-export async function getDashboardData(userId: string): Promise<DashboardData | null> {
+export async function getDashboardData(userId: string): Promise<DashboardLoadState> {
   assertDatabase()
 
-  const { isDatabaseReady, getBudgetState, getFixedExpenses, getRecentMovements, initUserData } =
+  const { isDatabaseReady, isDatabaseReachable, getBudgetState, getFixedExpenses, getRecentMovements, initUserData } =
     await import('@/lib/db')
-  if (!(await isDatabaseReady())) return null
+
+  if (!(await isDatabaseReachable())) {
+    return { status: 'unreachable' }
+  }
+
+  if (!(await isDatabaseReady())) return { status: 'missing_tables' }
 
   let budget = await getBudgetState(userId)
 
@@ -36,7 +40,12 @@ export async function getDashboardData(userId: string): Promise<DashboardData | 
     getRecentMovements(userId),
   ])
 
-  return { budget, expenses, movements }
+  return {
+    status: 'ok',
+    budget,
+    expenses,
+    movements,
+  }
 }
 
 export async function getBudgetForUser(userId: string): Promise<BudgetState | null> {

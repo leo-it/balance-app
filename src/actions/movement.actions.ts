@@ -158,7 +158,6 @@ export async function addMovement(
     await Promise.all([
       sendToN8n({ userId, action: 'add_movement', payload: movement }),
       syncBudgetSnapshot(userId),
-      applySavingsFromMovement(userId, amount, savingsTarget, cryptoSymbol),
     ])
 
     revalidatePath('/')
@@ -171,6 +170,67 @@ export async function addMovement(
   }
 }
 
+export async function markMovementPaid(movementId: string): Promise<void> {
+  assertDatabase()
+  const userId = await getUserId()
+  const paidAt = new Date().toISOString()
+  const db = createDbClient()
+
+  const existing = await fetchMovementRow(userId, movementId)
+  const savingsTarget = (existing.savings_target ?? 'none') as SavingsTarget
+  const cryptoSymbol = existing.crypto_symbol?.trim() || undefined
+  const amount = Number(existing.amount ?? 0)
+
+  const { error } = await db
+    .from('movements')
+    .update({ status: 'paid', paid_at: paidAt })
+    .eq('id', movementId)
+    .eq('user_id', userId)
+
+  if (error) throw new Error(error.message)
+
+  await Promise.all([
+    sendToN8n({ userId, action: 'mark_movement_paid', payload: { movementId, paidAt } }),
+    applySavingsFromMovement(userId, amount, savingsTarget, cryptoSymbol),
+    syncBudgetSnapshot(userId),
+  ])
+
+  revalidatePath('/')
+  revalidatePath('/analytics')
+  revalidatePath('/savings')
+  revalidatePath('/resumen')
+}
+
+export async function undoMovementPaid(movementId: string): Promise<void> {
+  assertDatabase()
+  const userId = await getUserId()
+  const db = createDbClient()
+
+  const existing = await fetchMovementRow(userId, movementId)
+  const savingsTarget = (existing.savings_target ?? 'none') as SavingsTarget
+  const cryptoSymbol = existing.crypto_symbol?.trim() || undefined
+  const amount = Number(existing.amount ?? 0)
+
+  const { error } = await db
+    .from('movements')
+    .update({ status: 'pending', paid_at: null })
+    .eq('id', movementId)
+    .eq('user_id', userId)
+
+  if (error) throw new Error(error.message)
+
+  await Promise.all([
+    sendToN8n({ userId, action: 'undo_movement_paid', payload: { movementId } }),
+    reverseSavingsFromMovement(userId, amount, savingsTarget, cryptoSymbol),
+    syncBudgetSnapshot(userId),
+  ])
+
+  revalidatePath('/')
+  revalidatePath('/analytics')
+  revalidatePath('/savings')
+  revalidatePath('/resumen')
+}
+
 export async function deleteMovement(movementId: string): Promise<void> {
   assertDatabase()
   const userId = await getUserId()
@@ -179,6 +239,7 @@ export async function deleteMovement(movementId: string): Promise<void> {
   const existing = await fetchMovementRow(userId, movementId)
   const savingsTarget = (existing.savings_target ?? 'none') as SavingsTarget
   const cryptoSymbol = existing.crypto_symbol?.trim() || undefined
+  const wasPaid = (existing.status ?? 'paid') === 'paid'
 
   const { error } = await db
     .from('movements')
@@ -192,7 +253,9 @@ export async function deleteMovement(movementId: string): Promise<void> {
 
   await Promise.all([
     sendToN8n({ userId, action: 'delete_movement', payload: { movementId } }),
-    reverseSavingsFromMovement(userId, Number(existing.amount ?? 0), savingsTarget, cryptoSymbol),
+    wasPaid
+      ? reverseSavingsFromMovement(userId, Number(existing.amount ?? 0), savingsTarget, cryptoSymbol)
+      : Promise.resolve(),
     syncBudgetSnapshot(userId),
   ])
 
@@ -241,6 +304,7 @@ export async function updateMovement(
     const oldTarget = (existing.savings_target ?? 'none') as SavingsTarget
     const oldAmount = Number(existing.amount ?? 0)
     const oldCryptoSymbol = existing.crypto_symbol?.trim() || undefined
+    const wasPaid = (existing.status ?? 'paid') === 'paid'
 
     await updateMovementRow(userId, movementId, {
       description,
@@ -279,8 +343,8 @@ export async function updateMovement(
         action: 'update_movement',
         payload: { movementId, description, amount, type, category },
       }),
-      reverseSavingsFromMovement(userId, oldAmount, oldTarget, oldCryptoSymbol),
-      applySavingsFromMovement(userId, amount, savingsTarget, cryptoSymbol),
+      wasPaid ? reverseSavingsFromMovement(userId, oldAmount, oldTarget, oldCryptoSymbol) : Promise.resolve(),
+      wasPaid ? applySavingsFromMovement(userId, amount, savingsTarget, cryptoSymbol) : Promise.resolve(),
       syncBudgetSnapshot(userId),
     ])
 
